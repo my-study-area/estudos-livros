@@ -237,3 +237,6 @@ Thermometer.newInstance(true);
 //BOM
 Thermometer.newInstance(Temperature.CELSIUS);
 ```
+
+tempo compilação: http://tassinfo.com.br/java/diferencas-entre-metodos-sobrecarregados-e-sobrescritos/
+
