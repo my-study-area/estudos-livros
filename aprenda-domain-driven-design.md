@@ -46,3 +46,52 @@ comunicação e integração de contexto delimitado
 
 Mapa de contexto: é a representação visual das relações e integrações entre os diferentes Contextos Delimitados (Bounded Contexts) de um sistema. É a fotografia estratégica do sistema. Ele não mostra tabelas ou classes, mas sim como os Bounded Contexts estão ligados e qual o nível de acoplamento (técnico e organizacional) entre eles.
 
+## Parte II
+### Capítulo 5
+- script de tranasação (transcation script): organiza a lógica de negócio em que cada procedimento lida com uma única solicitação de apresentação (Martin Fowler). O comportamento do procedimento é manter consistente em caso de sucesso e falha, isso significa que no caso de falha, deve reverter ou executar ações compensatórias.
+  - Focado no processo. Um método faz tudo (lógica + banco). Ideal para fluxos lineares em subdomínios de baixo valor.
+  - utilizado em subdomínio genérico e subdomínio de suporte
+```python
+def criar_pedido(cliente_id, itens):
+    cliente = db.buscar_cliente(cliente_id)
+    
+    if not cliente.ativo:
+        raise Exception("Cliente inativo")
+
+    pedido_id = db.inserir_pedido(cliente_id)
+
+    for item in itens:
+        db.inserir_item(pedido_id, item)
+
+    return pedido_id
+
+
+def criar_pedido():
+    # tudo aqui dentro
+```
+
+- registro ativo: um objeto que envolve uma linha em uma tabela ou uma visão do banco de dados encapsula o acesso ao banco de dados e adiciona a lógica de domínio nesses dados (Martin Fowler)
+  - Focado na estrutura. O objeto de dados tem métodos para persistência (Save, Update). Ideal para CRUDs em subdomínios de suporte onde a estrutura do banco é o espelho do negócio.
+  - utilizado em subdomínio de suporte
+  - Muito comum em frameworks (ex: ORM)
+```python
+class Pedido:
+    def __init__(self, cliente):
+        self.cliente = cliente
+        self.itens = []
+
+    def adicionar_item(self, item):
+        self.itens.append(item)
+
+    def salvar(self):
+        if not self.cliente.ativo:
+            raise Exception("Cliente inativo")
+
+        db.inserir_pedido(self)
+
+pedido = Pedido(cliente)
+pedido.adicionar_item(item)
+pedido.salvar()
+```
+
+
