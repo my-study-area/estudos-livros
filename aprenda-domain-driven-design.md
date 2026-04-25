@@ -96,11 +96,11 @@ pedido.salvar()
 ```
 
 
-## Capítulo 6 - Lidando com a Lógica de Negócio Complexa
+### Capítulo 6 - Lidando com a Lógica de Negócio Complexa
 - Modelo de domínio
   - invariantes: regras de negócio que devem ser cumpridas o tempo todo
   - padrões táticos do DDD: agregações, objetos de valor, eventos de domínio e serviços de domínio
-### Blocos de construção
+#### Blocos de construção
 - objetos de valor: Não tem uma propriedade de identificação. O conjunto das propriedades combinadas, diferenciam um objeto de outro. Ao alterar uma das propriedades já torno um objeto de valores diferente de outros. Evite sempre usar tipos primitivos para todas as propriedades.
 - entidades: Utiliza um identificador. A entidade é mutável.
 - agregados: é uma entidade, uma hierarquia de entidades que compartilham um limite transacional. 
