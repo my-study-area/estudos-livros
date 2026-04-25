@@ -1,4 +1,5 @@
 # Aprenda Domain Driven Design: Alinhando arquitetura de software e estratégia de negócio
+Exemplos de código do livro: https://github.com/forks-projects/learning-ddd
 
 Wolfdesk: gestão de tickets de help desk    
 - cobra pelo número de tickets e não pelo número de usuários
