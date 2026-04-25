@@ -162,3 +162,359 @@ Imagine que estamos modelando um **Avião**:
 
 
 
+### Capítulo 7 - Modelando a dimensão do Tempo
+#### Event Sourcing
+> Não adianta me mostrar o fluxo do seu código (if/else e loops) se eu não puder ver o seu Event Store. Se você me mostrar a sua tabela de eventos, eu vou entender a lógica do seu negócio na hora; o estado atual do sistema será apenas uma consequência óbvia.
+
+> O código explica o processo, mas os eventos explicam o domínio. No Event Sourcing, a fonte da verdade não é o que o sistema é agora, mas tudo o que ele foi até chegar aqui.
+
+- Modelo de domínio: persiste em um estado do agregado
+- Modelo de domínio orientado a eventos: gera eventos de domínio que descrevem cada estado
+
+
+---
+**Busca**    
+Vlad Khononov explica que o **Event Sourcing** muda a forma como pensamos sobre os dados. Em sistemas tradicionais, se você altera um telefone, o valor antigo some para sempre. No Event Sourcing, o "passado" é preservado no **Armazenamento de Eventos (Event Store)**.
+
+Vamos entender por que essa "Busca" específica da imagem é necessária e quando usá-la:
+
+**🎯 O Cenário de Uso**    
+Imagine um sistema de vendas (CRM). Um lead chamado **"Carlos Silva"** trocou de telefone e de sobrenome (agora é **"Carlos Souza"**). 
+
+* **O Problema:** Um vendedor que falou com ele há seis meses só o conhece como "Carlos Silva" e tem apenas o telefone antigo anotado num papel. Se ele buscar pelo nome antigo no "estado atual" do sistema, **não encontrará nada**.
+* **A Necessidade:** O negócio exige que os agentes consigam localizar leads usando **qualquer informação que já foi verdade um dia**.
+
+
+Aqui é onde cada mudança é salva como um fato imutável. Não existe "update", apenas novos registros.
+
+| Sequência | Lead_Id | Tipo do Evento | Dados (JSON/Payload) | Data_Hora |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | 101 | `LeadInitialized` | `{"nome": "Carlos", "sobrenome": "Silva", "tel": "11999"}` | 10/01/2026 |
+| 2 | 101 | `ContactDetailsChanged` | `{"novo_sobrenome": "Souza", "novo_tel": "11888"}` | 15/04/2026 |
+
+
+**2. A Projeção de Busca: Tabela de Leitura (`LeadSearchModel`)**
+Esta é a tabela baseada no código que você enviou. Ela é "alimentada" pelos eventos acima para facilitar a busca por qualquer valor histórico.
+
+| Lead_Id | Nomes (Histórico) | Sobrenomes (Histórico) | Telefones (Histórico) | Versão |
+| :--- | :--- | :--- | :--- | :--- |
+| 101 | `["Carlos"]` | `["Silva", "Souza"]` | `["11999", "11888"]` | 2 |
+
+
+<details>
+
+```c#
+public class LeadSearchModelProjection
+{
+    public long LeadId { get; private set; }
+    public HashSet<string> FirstNames { get; private set; }
+    public HashSet<string> LastNames { get; private set; }
+    public HashSet<PhoneNumber> PhoneNumbers { get; private set; }
+    public int Version { get; private set; }
+
+    public void Apply(LeadInitialized @event)
+    {
+        LeadId = @event.LeadId;
+        FirstNames = new HashSet < string > ();
+        LastNames = new HashSet < string > ();
+        PhoneNumbers = new HashSet < PhoneNumber > ();
+        FirstNames.Add(@event.FirstName);
+        LastNames.Add(@event.LastName);
+        PhoneNumbers.Add(@event.PhoneNumber);
+        Version = 0;
+    }
+
+    public void Apply(ContactDetailsChanged @event)
+    {
+        FirstNames.Add(@event.FirstName);
+        LastNames.Add(@event.LastName);
+        PhoneNumbers.Add(@event.PhoneNumber);
+        Version += 1;
+    }
+
+    public void Apply(Contacted @event)
+    {
+        Version += 1;
+    }
+
+    public void Apply(FollowupSet @event)
+    {
+        Version += 1;
+    }
+
+    public void Apply(OrderSubmitted @event)
+    {
+        Version += 1;
+    }
+
+    public void Apply(PaymentConfirmed @event)
+    {
+        Version += 1;
+    }
+}
+```
+</details>
+
+
+
+
+
+
+---
+**Análise**    
+Enquanto a "Busca" (que vimos antes) foca em localizar um registro específico (como achar um Lead pelo telefone antigo), a **Análise** foca em **derivar novos conhecimentos** a partir do histórico de eventos para apoiar decisões de negócio.
+
+
+**🏛️ 1. Explicação Arquitetural (O que é Análise?)**    
+No Event Sourcing, os eventos são a base para tudo. A "Análise" é uma **Projeção de Estado** que acumula dados para responder perguntas gerenciais ou estatísticas. 
+
+Diferente do Agregado (que só precisa do estado atual para validar regras), a Projeção de Análise olha para o fluxo de eventos e extrai métricas. No exemplo das imagens, o objetivo é contar "Follow-ups" (acompanhamentos). O sistema não "salva" o número 1 no histórico; ele conta quantas vezes o evento `FollowupScheduled` ocorreu.
+
+
+**🎯 Cenário de Uso: Inteligência Comercial**    
+Imagine que o Diretor de Vendas faça a seguinte pergunta:
+> *"Nossos Leads convertidos estão recebendo atenção suficiente? Qual a média de contatos que fazemos antes de fechar uma venda?"*
+
+* **A Necessidade:** O departamento de Inteligência Comercial precisa filtrar leads por status (`Converted`) e ver o contador de interações (`Followups`).
+* **O Valor:** Com essa projeção, eles descobrem que leads com mais de 3 follow-ups têm 80% mais chance de conversão. Isso permite otimizar o processo de vendas.
+
+
+**🗄️ 3. Representação no Banco de Dados**    
+Diferente da tabela de busca (que tinha listas de nomes), a tabela de **Análise** foca em contadores e status consolidados.
+
+Tabela de Eventos (`EventStore`) - A Origem
+| Sequência | Lead_Id | Tipo do Evento | Payload |
+| :--- | :--- | :--- | :--- |
+| 1 | 12 | `LeadInitialized` | `{"status": "New"}` |
+| 2 | 12 | `FollowupScheduled` | `{"date": "2026-04-20"}` |
+| 3 | 12 | `LeadConverted` | `{"value": 5000}` |
+
+Tabela de Projeção de Análise (`LeadAnalytics`) - O Resultado    
+Essa é a tabela física que o SQL do pessoal de BI vai consultar:
+| Lead_Id | Followups (Contador) | Status (Atual) | Versão (Último Evento) |
+| :--- | :--- | :--- | :--- |
+| **12** | **1** | **Converted** | **6** |
+
+
+<details>
+
+```c#
+public class AnalysisModelProjection
+{
+    public long LeadId { get; private set; }
+    public int Followups { get; private set; }
+    public LeadStatus Status { get; private set; }
+    public int Version { get; private set; }
+
+    public void Apply(LeadInitialized @event)
+    {
+        LeadId = @event.LeadId;
+        Followups = 0;
+        Status = LeadStatus.NEW_LEAD;
+        Version = 0;
+    }
+
+    public void Apply(Contacted @event)
+    {
+        Version += 1;
+    }
+
+    public void Apply(FollowupSet @event)
+    {
+        Status = LeadStatus.FOLLOWUP_SET;
+        Followups += 1;
+        Version += 1;
+    }
+
+    public void Apply(ContactDetailsChanged @event)
+    {
+        Version += 1;
+    }
+
+    public void Apply(OrderSubmitted @event)
+    {
+        Status = LeadStatus.PENDING_PAYMENT;
+        Version += 1;
+    }
+
+    public void Apply(PaymentConfirmed @event)
+    {
+        Status = LeadStatus.CONVERTED;
+        Version += 1;
+    }
+}
+```
+</details>
+
+
+
+
+---
+
+**Fonte confiável**    
+**🏛️ 1. Explicação Arquitetural**    
+Em sistemas tradicionais, a "verdade" é o estado atual (ex: o saldo atual de uma conta). No **Event Sourcing**, a **Fonte Confiável** não é o estado, mas sim a **sequência de eventos** que levou a esse estado. 
+
+O **Armazenamento de Eventos** (*Event Store*) é o único lugar onde os dados são gravados com consistência forte. Como mostra a imagem que você enviou, o Agregado é "reidratado" lendo esses eventos. Se a tabela de "Busca" ou de "Análise" (projeções) sumir, você não perde nada, pois pode reconstruí-las inteiras lendo a Fonte Confiável.
+
+**🎯 2. Cenário de Uso: Auditoria e Reconstrução**    
+Imagine que o departamento de conformidade (Compliance) questiona por que um Lead foi marcado como "Convertido" se não há registros de chamadas.
+
+* **Sem Event Sourcing:** Você olha o banco de dados e vê `status: Converted`. Você não sabe *como* ou *quem* mudou, apenas que está assim agora.
+* **Com Fonte Confiável (Event Sourcing):** Você recorre ao Event Store e vê a linha do tempo exata:
+    1.  `LeadInitialized` (10:00)
+    2.  `FollowupScheduled` (10:05)
+    3.  `LeadConverted` (10:10)
+    A Fonte Confiável prova que a conversão seguiu o processo. Se houver um erro na tabela de análise (ex: o contador de follow-ups estiver em 0 por um bug), a Fonte Confiável é usada para corrigir a projeção.
+
+
+| Global_Pos | Stream_ID (Lead_Id) | Tipo_Evento | Dados (Payload JSON) | Versão |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | 12 | `LeadInitialized` | `{"vendedor": "Ana"}` | 1 |
+| 2 | 12 | `FollowupScheduled` | `{"canal": "WhatsApp"}` | 2 |
+| 3 | 12 | `LeadConverted` | `{"valor": 1500}` | 3 |
+
+
+
+
+
+---
+**Armazenamento de eventos**    
+O **Armazenamento de Eventos** (*Event Store*) é o coração do padrão *Event Sourcing*. Em vez de salvar apenas o estado final de um objeto, ele registra cada mudança individual como um evento imutável. 📜
+
+Aqui estão os pontos fundamentais do resumo:
+
+* **Imutabilidade (Append-only) 🚫**: Diferente de bancos de dados tradicionais, você nunca altera ou exclui um evento. Novas informações são apenas anexadas ao fim do registro, como em um livro-razão financeiro.
+* **Funcionalidades Básicas 🛠️**: O armazenamento precisa permitir duas ações principais:
+    1.  **Buscar (Fetch)**: Recuperar todos os eventos de uma entidade específica para reconstruir seu estado.
+    2.  **Anexar (Append)**: Adicionar novos eventos ao histórico.
+* **Controle de Concorrência 🔄**: O uso do parâmetro `expectedVersion` garante que você não salve eventos baseados em informações obsoletas. Se outra pessoa alterou a entidade enquanto você tomava uma decisão, o sistema gera uma exceção para evitar conflitos.
+* **Projeção de Estado 📈**: O "estado atual" (como um saldo bancário) não é o dado primário, mas sim o resultado da soma de todos os eventos registrados até aquele momento.
+
+
+---
+#### Modelo de domínio orientado a eventos
+**1. Explicação Arquitetural 🏗️**    
+Diferente de um modelo baseado em estado, onde o banco de dados reflete o "agora", a arquitetura de Event Sourcing funciona como um livro-razão contábil.
+
+**Fluxo de Poder e Dados:**
+1.  **Comando**: O usuário solicita uma mudança (ex: `MudarEndereco`).
+2.  **Agregado**: Carrega todos os eventos passados do `Event Store` para reconstruir seu estado interno.
+3.  **Lógica de Negócio**: O Agregado decide se a mudança é válida.
+4.  **Evento**: Se válida, o Agregado gera um evento (`EnderecoAlterado`).
+5.  **Append**: O evento é anexado ao `Event Store`.
+
+<details>
+
+```c#
+public class TicketAPI
+{
+    private ITicketsRepository _ticketsRepository;
+    // ...
+  
+    public void RequestEscalation(TicketId id)
+    {
+        var events = _ticketsRepository.LoadEvents(id);
+        var ticket = new Ticket(events);
+        var originalVersion = ticket.Version;
+        var cmd = new RequestEscalation();
+        ticket.Execute(cmd);
+        _ticketsRepository.CommitChanges(ticket, originalVersion);
+    }
+ 
+    // ...
+}
+```
+
+```c#
+public class Ticket
+{
+    // ...
+    private List<DomainEvent> _domainEvents = new List<DomainEvent>();
+    private TicketState _state;
+    // ...
+  
+    public Ticket(IEnumerable<IDomainEvents> events)
+    {
+        _state = new TicketState();
+        foreach (var e in events)
+        {
+            AppendEvent(e);
+        }
+    }
+
+    private void AppendEvent(IDomainEvent @event)
+    {
+        _domainEvents.Append(@event);
+        // Dynamically call the correct overload of the “Apply” method.
+        ((dynamic)state).Apply((dynamic)@event);
+    }
+
+    public void Execute(RequestEscalation cmd)
+    {
+        if (!_state.IsEscalated && _state.RemainingTimePercentage <= 0)
+        {
+            var escalatedEvent = new TicketEscalated(_id, cmd.Reason);
+            AppendEvent(escalatedEvent);
+        }
+    }
+    
+    // ...
+}
+```
+
+
+```c#
+public class TicketState
+{
+    public TicketId Id { get; private set; }
+    public int Version { get; private set; }
+    public bool IsEscalated { get; private set; }
+    // ...
+    public void Apply(TicketInitialized @event)
+    {
+        Id = @event.Id;
+        Version = 0;
+        IsEscalated = false;
+        // ....
+    }
+ 
+    public void Apply(TicketEscalated @event)
+    {
+        IsEscalated = true;
+        Version += 1;
+    }
+ 
+    // ...
+}
+```
+</details>
+
+- Vantagens
+  - Viagem no tempo
+  - Insight profundo
+  - Log de auditoria
+  - Gerenciamento avançado de concorrência otimista
+- Desvantagens
+  - curva de aprendizado
+  - desenvolvendo o modelo
+  - complexidade arquitetônica
+
+
+- Perguntas mais frequentes
+  - Desempenho
+  - Deletando dados: **forgatteble payload**: informações sensíveis são armazenadas em eventos de forma criptografada. A chave de criptografia é armazenada em local externo. Quando é necessário excluir é apagada do armazenamento de chaves
+  - Por que não posso simplesmente ...:
+    - gravar logs em arquivos e usar como log de auditoria?: o autor dá um exemplo de falha após o log ser gerado. Se o primeiro (banco de dados) falha, o segundo tem que ser revertido (log)
+    - trabalhar com um modelo baseado em estado e na mesma tranasação, anexar logs em uma tabela de logs? R: o autor lembra do caso de engenheiro esquecer de anexar o registro de log. Outro exemplo quando se utiliza a representação de estado com confiável, a tabela de logs adicional pode não conter todas as informações necessárias
+    -trabalhar com um modelo baseado em estado e acrescentar um gatilho no banco de dados para salvar um snapshot? R: o histórico resultante gera dados secos, falta contexto de negócio informando o que foi alterado e o motivo.
+
+
+
+#### Gerado por IA
+**Sobre armazenamento de eventos**    
+No Capítulo 7 de Vlad Khononov, o armazenamento de eventos (**Event Store**) deixa de ser apenas um banco de dados comum para se tornar a **única fonte da verdade** 📜. Enquanto em sistemas tradicionais salvamos o "estado atual" (o saldo final), no Event Sourcing salvamos a "história" (cada depósito e cada saque).
+
+O ponto principal que você deve se atentar é a **Imutabilidade** 🛡️. Em um Event Store purista, operações de `UPDATE` ou `DELETE` são proibidas. Se algo aconteceu no passado, aquilo é um fato imutável. Para corrigir um erro, você não apaga o evento; você anexa um novo "evento de compensação".
+
+
