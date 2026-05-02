@@ -518,3 +518,398 @@ No Capítulo 7 de Vlad Khononov, o armazenamento de eventos (**Event Store**) de
 O ponto principal que você deve se atentar é a **Imutabilidade** 🛡️. Em um Event Store purista, operações de `UPDATE` ou `DELETE` são proibidas. Se algo aconteceu no passado, aquilo é um fato imutável. Para corrigir um erro, você não apaga o evento; você anexa um novo "evento de compensação".
 
 
+### Capítulo 8 - Padrões de arquitetura
+#### Arquitetura em camadas
+Camadas horizontais com as seguintes preocupações: 
+- camada de apresentação (interação com clientes)
+- camada lógica de negócio (implementação da lógica de negócio)
+- camada de acesso a dados (persintência dos dados)
+
+**camada de apresentação**    
+- Interface Gráfica do Usuário (GUI) 
+- Interface da linha de comando (CLI) 
+- API para integração programática com outros sistemas Assinatura de eventos em um intermediário de mensagens 
+- Tópicos de mensagem para a publicação dos eventos de saída 
+```
+Camada de apresentação [IU da web] [CLI] [API REST]
+```
+
+
+**camada lógica de negócio**   
+Nesta camada vemos os padrões de lógicas discutidos anteriormente: script de transação, registro ativo, modelo de domínio e modelo de dominio orientado a eventos (Event Storm)
+
+```
+Camada logica de negócio [Entidades] [Regras] [Processos]
+```
+
+**camada de acesso a dados**
+- banco de dados
+- eventos
+- mensagens
+```
+Camada de acesso a dados [Entidades] [Regras] [Processos]
+```
+
+**Comunicação entre camadas**
+```mermaid
+graph TD
+    %% Definição de estilo para largura fixa
+    classDef fixWidth width:240px,height:50px;
+
+    subgraph P [Camada de apresentação]
+        direction LR
+        A1[IU da Web] --- A2[CLI] --- A3[API REST]
+    end
+
+    subgraph L [Camada da lógica de negócio]
+        direction LR
+        B1[Entidades] --- B2[Regras] --- B3[Processos]
+    end
+
+    subgraph D [Camada do acesso de dados]
+        direction LR
+        C1[Banco de dados] --- C2[Barramento de mensagem] --- C3[Armazenamento de objetos]
+    end
+
+    %% Conexões verticais
+    P --> L
+    L --> D
+
+    %% Aplicação do estilo a todos os nós
+    class A1,A2,A3,B1,B2,B3,C1,C2,C3 fixWidth
+    
+    %% Esconder links de suporte horizontal
+    linkStyle 0,1,2,3,4,5 stroke:none, stroke-width:0px
+```
+
+
+**VARIAÇÂO - Camada de Serviços**
+<details>
+<summary>Exemplo de camada de serviço utilizando o MVC para criar um novo usuário. A criação de usuário utilizado o padrão REGISTRO ATIVO (active record) para armazenar no banco de dados</summary>
+
+```c#
+namespace MvcApplication.Controllers
+{
+    public class UserController: Controller
+    {
+        // ...
+
+        [AcceptVerbs(HttpVerbs.Post)]
+        public ActionResult Create(ContactDetails contactDetails)
+        {
+            OperationResult result = null;
+
+            try
+            {
+                _db.StartTransaction();
+                
+                var user = new User();
+                user.SetContactDetails(contactDetails)
+                user.Save();
+                
+                _db.Commit();
+                result = OperationResult.Success;
+            } catch (Exception ex) {
+                _db.Rollback();
+                result = OperationResult.Exception(ex);
+            }
+
+            return View(result);
+        }
+    }
+}
+```
+</details>
+
+
+Para desacoplar a camada de apresentação da camada de negócio é possível utilizar uma camada de serviço. Ex:
+```mermaid
+graph TD
+    %% Definição de Estilo para Simetria
+    classDef fixWidth width:160px,height:60px,display:flex,justify-content:center,align-items:center;
+
+    %% Camada de Apresentação
+    subgraph S1 [Camada de Apresentação]
+        direction LR
+        N1_1[IU da Web] --- N1_2[CLI] --- N1_3[API REST]
+    end
+
+    %% Camada de Serviço
+    subgraph S2 [Camada de Serviço]
+        direction LR
+        N2_1[Ação] --- N2_2[Ação] --- N2_3[Ação]
+    end
+
+    %% Camada da Lógica de Negócio
+    subgraph S3 [Camada da Lógica de Negócio]
+        direction LR
+        N3_1[Entidades] --- N3_2[Regras] --- N3_3[Processos]
+    end
+
+    %% Camada do Acesso de Dados
+    subgraph S4 [Camada do Acesso de Dados]
+        direction LR
+        N4_1[Banco de dados] --- N4_2[Barramento de mensagem] --- N4_3[Armazenamento de objetos]
+    end
+
+    %% Conexões entre Camadas (Usando IDs)
+    S1 --> S2
+    S2 --> S3
+    S3 --> S4
+
+    %% Aplicação da Classe de Largura Fixa
+    class N1_1,N1_2,N1_3,N2_1,N2_2,N2_3,N3_1,N3_2,N3_3,N4_1,N4_2,N4_3 fixWidth;
+
+    %% Escondendo links horizontais para manter o layout lado a lado
+    linkStyle 0,1,2,3,4,5,6,7 stroke:none,stroke-width:0px;
+```
+
+<details>
+<summary>Exemplo de separação da acamada de apresentação utilizando uma camada de serviço</summary>
+
+```c#
+interface CampaignManagementService
+{
+      OperationResult CreateCampaign(CampaignDetails details);
+      OperationResult Publish(CampaignId id, PublishingSchedule schedule);
+      OperationResult Deactivate(CampaignId id);
+      OperationResult AddDisplayLocation(CampaignId id, DisplayLocation newLocation);
+      // ...
+}
+```
+
+```c#
+namespace ServiceLayer
+{
+    public class UserService
+    {
+        // ...
+        
+        public OperationResult Create(ContactDetails contactDetails)
+        {
+            OperationResult result = null;
+
+            try
+            {
+                _db.StartTransaction();
+                
+                var user = new User();
+                user.SetContactDetails(contactDetails)
+                user.Save();
+
+                _db.Commit();
+                result = OperationResult.Success;
+            } catch (Exception ex) {
+                _db.Rollback();
+                result = OperationResult.Exception(ex);
+            }
+
+            return result;
+        }
+
+        // ...
+    }
+}
+```
+
+```c#
+namespace MvcApplication.Controllers
+{
+    public class UserController: Controller
+    {
+        // ...
+
+        [AcceptVerbs(HttpVerbs.Post)]
+        public ActionResult Create(ContactDetails contactDetails)
+        {
+            var result = _userService.Create(contactDetails);
+            return View(result);
+        }
+    }
+}
+```
+</details>
+
+**Quando utilizar?**    
+Quando a lógica de negócio utiliza o padrão **script de transação** ou **registro ativo**.
+
+
+
+
+#### Portas e adaptadores
+Utilizada para implementar a lógica de negócio mais complexa.
+
+Princípio da inmversão de dependência é um conceito forte no portas e adaptadores.
+```mermaid
+flowchart TB
+
+%% =========================
+%% CAMADA LÓGICA DE NEGÓCIO
+%% =========================
+subgraph BL["Camada da lógica de negócio"]
+direction LR
+BL0["Camada da lógica de negócio"]
+E["Entidades"]
+R["Regras"]
+P["Processos"]
+D1[" "]
+end
+
+%% =========================
+%% CAMADA DE SERVIÇO
+%% =========================
+subgraph SV["Camada de serviço"]
+direction LR
+SV0["Camada de serviço"]
+A1["Ação"]
+A2["Ação"]
+A3["Ação"]
+D2[" "]
+end
+
+%% =========================
+%% CAMADA INFRAESTRUTURA
+%% =========================
+subgraph INF["Camada da infraestrutura"]
+direction LR
+INF0["Camada da infraestrutura"]
+DB["Banco de dados"]
+UI["IU da estrutura"]
+EXT["Provedor externo"]
+MSG["Barramento de mensagem"]
+end
+
+%% Fluxo vertical
+A2 --> E
+UI --> A2
+
+%% Invisível para equalizar largura
+style D1 fill:transparent,stroke:transparent,color:transparent
+style D2 fill:transparent,stroke:transparent,color:transparent
+```
+
+
+Arquitetura porta de adaptadores:
+![Arquitetura porta de adaptadores](./assets/livro-ddd/arquitetura-portas-adaptadores-2026-04-28_22-03.png)
+
+Exemplo de implementação de adaptador concreto na camada de infraestrutura para um barramento de mensagem:
+```c#
+namespace App.BusinessLogicLayer
+{
+    public interface IMessaging
+    {
+        void Publish(Message payload);
+        void Subscribe(Message type, Action callback);
+    }
+}
+
+namespace App.Infrastructure.Adapters
+{
+    public class SQSBus: IMessaging { 
+    /*  
+      implementação dos métodos Publish e Subscribe
+     */ 
+    }
+}
+```
+
+A arquitetura de portas e adaptadores também é conhecida como arquitetura hexagonal, arquitetura cebola e arquitetura limpa, mas a terminologia pode ser diferente.
+
+
+
+```
+Camada do aplicativo = camada de serviço = camada do caso de uso 
+Camada da lógica de negócio = camada de domínio = camada principal
+```
+
+**Quando utilizar?**
+Perfeita para aplicar a lógica de negócio utilizando o padrão de modelo de domínio.
+
+
+
+#### CQRS (Command Query Responsability Segregation)
+Segregação de Responsabilidade de Comando e Consulta
+
+1- Sistemas que utilizam o processamento de transação online (OLTP) e processamento analítico online(OLAP)
+2- Um único sistema utilizar um banco de dados para armazenamento de documentos, um armazenamento para colunas/relatório e um mecanismo de buscas robustas
+
+
+
+**MAPEAMENTO ARQUITETURAL: Ferramentas de Mercado 🏛️**    
+No **CQRS**, cada armazenamento resolve um problema específico de acesso a dados:
+
+* **Armazenamento de Documentos (Escrita/Comando):** Foca em consistência e atomicidade do Agregado.
+    * *Exemplos:* **DynamoDB**,**MongoDB** 🍃 ou **PostgreSQL** (usando tipos JSONB).
+* **Armazenamento de Colunas (Analítico):** Otimizado para ler grandes volumes e agregar valores (Soma, Média).
+    * *Exemplos:* **Redshift**, **ClickHouse** 🏠 ou **Google BigQuery**.
+* **Mecanismo de Busca (Consulta Complexa):** Foca em pesquisa textual e filtros dinâmicos.
+    * *Exemplos:* **Elasticsearch** 🔍 ou **Apache Solr**.
+
+> Está relacionado ao **event source** (modelo de domínio orientado a eventos) falado no capítulo 7.
+
+
+O padrão separa em dois tipos:
+- modelo de execução de comando
+- modelo de leitura
+
+
+**Modelo de execução de comando**    
+- Utiliza somente um modelo para executar operações que alteram o estado do sistema
+- Aplica a lógica de negócio, valida regras e aplica invariantes
+- É modelo que representa dados fortemente consistentes, ou seja, após um comando ser executado, o estado resultante é imediatamente consistente, não existe “eventualmente correto”
+- Tem suporte a concorrência otimista
+
+
+
+**Modelo de leitura**    
+- Utiliza quantos modelos forem necessários
+- É uma projeção pré-cache, pode residir em banco de dados durável, um arquivo simples ou cachê de memória
+- Nenhuma operação do sistema pode modificar diretamente os dados do modelo de leitura
+
+
+![Arquitetura CQRS - Peojeção](./assets/livro-ddd/arquitetura-cqrs-projecao-2026-04-29_22-03.png)
+
+**Projeção síncrona**    
+A assinatura catch-up (ou busca ativa) é o mecanismo que permite ao sistema de leitura "alcançar" o estado do sistema de escrita de forma incremental e resiliente. No contexto do CQRS, ela funciona como um processo de sincronização contínua.
+
+- mecanismo de projeção busca informação no banco de dados OLTP
+- mecanismo de projeção atualiza o modelo de leitura do sistema
+- mecanismo de projeção armazena o último registro atualizado (checkpoint)
+
+
+*   **Ponto 1: Consulta de Incrementos (Onde paramos?):** O mecanismo de projeção utiliza o checkpoint para identificar a posição exata do último registro processado no banco de dados OLTP. Ele solicita apenas os dados que possuem um valor de versão ou ID superior a esse marcador, garantindo que apenas as novidades sejam capturadas.
+*   **Ponto 2: Atualização do Modelo (Transformação):** Os dados obtidos a partir do checkpoint são usados para regenerar ou atualizar os modelos de leitura. Esse processo transforma a informação bruta do modelo de comando em uma estrutura otimizada para consultas rápidas no destino.
+*   **Ponto 3: Persistência do Progresso (Garantia de Continuidade):** Após o processamento bem-sucedido, o novo valor do último registro é gravado como o checkpoint atualizado. Esse registro de progresso é o que permite ao sistema retomar o trabalho corretamente em uma próxima iteração ou reconstruir toda a projeção do zero caso o valor seja resetado para 0.
+
+
+
+**Projeção assíncrona**    
+Nas projeções assíncronas, o modelo de execução de comando publica as mudanças para um barramento de mensagem.
+
+O mecanismo de projeção utiliza as mensagens para atualizar o modelo de leitura.
+
+![Mecanismo de projeção do modelo de leitura do CQRS - Projeção assincrona](./assets/livro-ddd/arquitetura-cqrs-modeloleitura-projecao-assincrona-2026-04-30_22-37.png)
+
+
+
+
+**Segregação do modelo**    
+A segregação do modelo no CQRS não é apenas uma separação de tabelas ou classes; é uma separação de intenções e garantias de consistência.
+
+- Comandos (Escrita): Focam na execução da lógica de negócio e operam no modelo fortemente consistente. Khononov é enfático: o comando deve informar se teve sucesso ou falhou e, se necessário, retornar dados resultantes da operação para evitar idas e vindas (roundtrips) desnecessárias.
+- Consultas (Leitura): Operam em modelos que frequentemente são eventualmente consistentes. Elas não podem modificar o estado do sistema.
+
+
+
+**Quando utilizar?**    
+o CQRS serve naturalmente para modelos de domínio orientado a eventos
+
+
+**Conclusão**    
+A escolha da arquitetura não é uma questão de preferência estética, mas sim de **complexidade do domínio** e **estratégia de consistência**. 
+
+- **Arquitetura em Camadas (Layered):** Decompõe o sistema por preocupações tecnológicas (Apresentação -> Negócio -> Dados). É adequada para padrões de **Registro Ativo (Active Record)** onde a lógica de negócio e o acesso a dados estão acoplados.
+- **Portas e Adaptadores (Hexagonal):** Inverte as relações, colocando a **Lógica de Negócio no centro** e isolando-a de dependências externas (bancos de dados, APIs). É o padrão ideal para o **Modelo de Domínio (Domain Model)** purista.
+- **CQRS:** Segrega os modelos de leitura e escrita. É obrigatório para sistemas baseados em **Event Sourcing** ou quando múltiplos modelos persistentes são necessários para atender diferentes requisitos de performance e busca.
+
+
