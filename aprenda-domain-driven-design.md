@@ -913,3 +913,408 @@ A escolha da arquitetura não é uma questão de preferência estética, mas sim
 - **CQRS:** Segrega os modelos de leitura e escrita. É obrigatório para sistemas baseados em **Event Sourcing** ou quando múltiplos modelos persistentes são necessários para atender diferentes requisitos de performance e busca.
 
 
+### Capítulo 9 - Padrões de Comunicação
+Veremos os padrões para organizar o fluxo de comunicação entre os elementos do sistema. 
+
+Este padrão facilita a comunicação entre os contextos delimitados. 
+
+Contextos delimitados (**Bounded Contexts**) se comunicam sem corromper seus modelos de domínio. Quando os modelos de linguagem ubíqua entre dois contextos são diferentes, precisamos de uma camada de tradução. A escolha entre uma abordagem **com estado** ou **sem estado** depende da complexidade da transformação e da necessidade de persistência.
+
+Vamos explorar esses conceitos sob a ótica da integridade de domínio.
+
+A tradução ocorre na **Anticorruption Layer (ACL)** ou no **Open-Host Service (OHS)**. A diferença fundamental reside em onde a lógica de "memória" da tradução reside.
+
+
+**Tradução Sem Estado (Stateless):**
+*   A transformação é 1:1 ou funcional.
+*   Não há necessidade de armazenar dados de traduções anteriores.
+*   Ocorre em tempo de execução, geralmente no próprio processo do consumidor (ACL).
+
+**Tradução Com Estado (Stateful):**
+*   Exige um banco de dados próprio para mapear identidades ou agregar dados de múltiplas chamadas.
+*   Utilizada quando o modelo de origem é muito fragmentado ou quando as IDs não coincidem de forma óbvia.
+*   Geralmente implementada como um serviço intermediário ou um **BFF (Backend for Frontend)** complexo.
+
+
+EXPLICAÇÃO ARQUITETURAL 🏗️
+
+Ambos os padrões tratam de integrações, mas com "centros de poder" opostos. No DDD, a relação de poder (quem se adapta a quem) é o que dita qual padrão usar.
+
+**ACL (Anti-Corruption Layer - Camada Anticorrupção)**    
+É uma camada defensiva onde o **Consumidor** se recusa a ser poluído pelo modelo do **Provedor**.
+*   **Fluxo**: [Modelo Legado/Externo] → (ACL: Tradutor/Adaptador) → [Seu Modelo Limpo]
+*   **Poder**: O controle está no Consumidor.
+
+**OHS (Open-Host Service - Serviço de Host Aberto)**    
+O **Provedor** define um protocolo público e estável para que múltiplos consumidores o utilizem sem que ele precise criar uma integração customizada para cada um.
+*   **Fluxo**: [Provedor] → (OHS: API/Contrato Público) → [Múltiplos Consumidores]
+*   **Poder**: O controle está no Provedor.
+```
+ACL (O Consumidor se protege):
+[ Contexto A (Upstream) ] ----> [ ACL | Contexto B (Downstream) ]
+                                  ^--- Traduz o "dialeto" de A para B
+
+OHS (O Provedor se estabiliza):
+[ Contexto A (Upstream + OHS) ] <---- [ Contexto B (Consumidor) ]
+       |                               <---- [ Contexto C (Consumidor) ]
+       +--> Publica uma Interface Publicada (Published Language)
+```
+
+
+
+**Tradução de modelo sem estado**    
+- sincrona: uso de gateway de apis abertas como Kong ou privadas como AWS API Gateway
+- assincronza: proxy de mensagens
+
+
+
+**Tradução de modelo com estado**    
+São transformações mais significativas. Quando precisar agregar dados ou unificar de várias fontes em um único modelo.
+
+
+
+**Integrando agragados**
+Uma das forma de um agregado se comuniar num sistema é através dos eventos, mas como são publicados num barramento de mensagens?
+
+Primeiro vamos vamos ao erros:
+```c#
+public class Campaign
+{
+    // ...
+    List<DomainEvent> _events;
+    IMessageBus _messageBus;
+    // ...
+  
+    public void Deactivate(string reason)
+    {
+        for (l in _locations.Values())
+        {
+            l.Deactivate();
+        }
+   
+        IsActive = false;
+  
+        var newEvent = new CampaignDeactivated(_id, reason);
+        _events.Append(newEvent);
+        _messageBus.Publish(newEvent);
+    }
+}
+```
+
+> Erro 1: publicar eventos dentro do agregado é ruim: 1- evento enviado antes armazenar a alteração de estado no banco de dados. 2- algum erro no armazenamento de dados após o envio do evento e o banco desfazer a alteração no banco, o evento não poderá ser desfeito.
+
+```c#
+public class ManagementAPI
+{
+    // ...
+    private readonly IMessageBus _messageBus;
+    private readonly ICampaignRepository _repository;
+    // ...
+    public ExecutionResult DeactivateCampaign(CampaignId id, string reason)
+    {
+        try
+        {
+            var campaign = repository.Load(id);
+            campaign.Deactivate(reason);
+            _repository.CommitChanges(campaign);
+ 
+            var events = campaign.GetUnpublishedEvents();
+            for (IDomainEvent e in events)
+            {
+                _messageBus.publish(e);
+            }
+            campaign.ClearUnpublishedEvents();
+        }
+        catch(Exception ex)
+        {
+            // ...
+        }
+    }
+}
+```
+
+> Erro 2: eventos de domínio enviados pela camada de aplicativo. Aqui o envio de evento somente é realizado após a confirmação no banco de dados. Aqui também podemos ter algum erro no armazenamento de dados ou barramento de mensagens e deixar o sistema num estado inconsistente.
+
+> Esses casos podem ser solucionados com o padrão de caixa de saída.
+
+
+
+#### **Caixa de saída (OUTBOX)**    
+Garante a publicação confiável dos eventos de domínio utilizando o seguinte algoritmo:
+- estado do agregado atualizado e evento de domínio numa transação atômica
+- busca de eventos de domínio enviados recentemente no banco de dados
+- publicação de evento no barramento de evento
+- após publicado, o evento é marcado como publicado ou excluído
+
+![Caixa de saída - outbox](./assets/livro-ddd/cap-9-padrao-comunicacao-caixa-saida-outbox-2026-05-03_15-52.png)
+
+
+
+No envio atômico dos dados do estado do agregado e evento, é essencial utilizar um banco de dados transacional e no caso de um banco de dados sem suporte ao envio de duas tabelas de forma tranasacional, é possível enviar o evento do domínio incorporado no registro do agregado. Estado do agregado e lista de evento de domínio conforme o exemplo:
+```json
+{
+    "campaign-id": "364b33c3-2171-446d-b652-8e5a7b2be1af",
+    "state": {
+        "name": "Autumn 2017",
+        "publishing-state": "DEACTIVATED",
+        "ad-locations": [
+            "..."
+        ],
+        "...": "..."
+    },
+    "outbox": [
+        {
+            "campaign-id": "364b33c3-2171-446d-b652-8e5a7b2be1af",
+            "type": "campaign-deactivated",
+            "reason": "Goals met",
+            "published": false
+        }
+    ]
+}
+```
+
+
+
+**Buscando eventos não publicados**    
+No Domain-Driven Design, a integridade é sagrada. O padrão Outbox resolve o problema de atomicidade entre a mudança de estado do Agregado e a notificação dessa mudança para o mundo externo. No entanto, ter os eventos na tabela `Outbox` é apenas metade do caminho; precisamos movê-los para o message broker. Para isso temos 2 opções: **Pull** e **Push**.
+
+**Diagrama de Fluxo (Outbox Relay):**
+
+```text
+[ Agregado ] --(1. Transação Atômica)--> [ DB: Tabela de Negócio ]
+      |                                  [ DB: Tabela Outbox  ]
+      |
+      +------(2. Notificação/Busca)-----> [ Relé de Publicação ]
+      |
+      +------(3. Publica) 
+      | 
+      +------(4. Marca como enviado)
+      |
+      v          
+[ Message Broker / Bus ]
+```
+
+
+- **PULL (Polling Publisher):** O Relé interroga o banco de dados em intervalos fixos (ex: a cada 100ms). É uma busca ativa ("Você tem algo novo?").
+- **PUSH (Transaction Log Tailer):** O Relé reage a um gatilho do banco de dados (Change Data Capture - CDC). O banco "empurra" a mudança para o Relé assim que o log de transação é gravado.
+
+
+**Por que o rigor do Outbox com Relé é necessário?**
+Muitos desenvolvedores tentam publicar eventos diretamente de dentro da Entidade ou do Service (o famoso "Ghost Publishing"). Se o banco de dados falhar no *commit* após a mensagem ter sido enviada ao RabbitMQ, seu sistema estará em um estado inconsistente: o mundo exterior acha que algo aconteceu, mas seu banco diz que não.
+
+- **PULL (Polling):**
+    *   *Prós:* Simples de implementar; funciona em qualquer DB relacional.
+    *   *Contras:* Gera carga constante no DB (requer índices precisos); introduz latência (o tempo do intervalo do poll).
+- **PUSH (Log Tailoring/CDC):**
+    *   *Prós:* Baixíssima latência; quase zero impacto de performance no DB, pois lê o log de transações (como o `binlog` do MySQL ou `WAL` do Postgres).
+    *   *Contras:* Complexidade operacional alta (ex: configurar Debezium ou DynamoDB Streams).
+
+
+> o padrão caixa de saída garante o envio da mensagem em pelo menos um vez. Se uma mensagem for publica e falhar antes de atualizar o banco de dados informando que o evento foi enviado, o mesma mensagem pode ser enviada novamente.
+
+
+
+**Saga**    
+![Saga](./assets/livro-ddd/cap-9-padrao-comunicacao-saga-2026-05-04_21-39.png)
+
+Exemplo de campnha com utilizando uma `saga`:
+```c#
+public class CampaignPublishingSaga
+{
+    private readonly ICampaignRepository _repository;
+    private readonly IPublishingServiceClient _publishingService;
+    // ...
+
+    public void Process(CampaignActivated @event)
+    {
+        var campaign = _repository.Load(@event.CampaignId);
+        var advertisingMaterials = campaign.GenerateAdvertisingMaterials);
+        _publishingService.SubmitAdvertisement(@event.CampaignId,
+                                              advertisingMaterials);
+    }
+
+    public void Process(PublishingConfirmed @event)
+    {
+        var campaign = _repository.Load(@event.CampaignId);
+        campaign.TrackPublishingConfirmation(@event.ConfirmationId);
+        _repository.CommitChanges(campaign);
+    }
+
+    public void Process(PublishingRejected @event)
+    {
+        var campaign = _repository.Load(@event.CampaignId);
+        campaign.TrackPublishingRejection(@event.RejectionReason);
+        _repository.CommitChanges(campaign);
+    }
+}
+```
+
+
+
+```c#
+public class CampaignPublishingSaga
+{
+    private readonly ICampaignRepository _repository;
+    private readonly IList<IDomainEvent> _events;
+    // ...
+
+    public void Process(CampaignActivated activated)
+    {
+        var campaign = _repository.Load(activated.CampaignId);
+        var advertisingMaterials = campaign.GenerateAdvertisingMaterials);
+        var commandIssuedEvent = new CommandIssuedEvent(
+            target: Target.PublishingService,
+            command: new SubmitAdvertisementCommand(activated.CampaignId,
+            advertisingMaterials));
+        
+        _events.Append(activated);
+        _events.Append(commandIssuedEvent);
+    }
+
+    public void Process(PublishingConfirmed confirmed)
+    {
+        var commandIssuedEvent = new CommandIssuedEvent(
+            target: Target.CampaignAggregate,
+            command: new TrackConfirmation(confirmed.CampaignId,
+                                           confirmed.ConfirmationId));
+
+        _events.Append(confirmed);
+        _events.Append(commandIssuedEvent);
+    }
+
+    public void Process(PublishingRejected rejected)
+    {
+        var commandIssuedEvent = new CommandIssuedEvent(
+            target: Target.CampaignAggregate,
+            command: new TrackRejection(rejected.CampaignId,
+                                        rejected.RejectionReason));
+
+        _events.Append(rejected);
+        _events.Append(commandIssuedEvent);
+    }
+}
+```
+
+
+**Consistência**    
+> Apenas os dados dentro dos limites de um agregado podem ser considerados fortemente consistentes. Tudo do lado de fora acaba sendo consistente.
+
+
+
+#### Gerenciador de processos
+Se uma sega tem declaração de if e else, então ela é um **gerenciado de processos**
+![gerenciado de processos](./assets/livro-ddd/cap-9-padrao-comunicacao-gerenciador-processos-2026-05-05_21-26.png)
+
+
+Outro exemplo: A reserva de uma viagem de negócios começa com o algoritmo de roteamento escolhendo a rota de voo mais barata e pedindo ao funcionário que a aprove. Caso ele prefira uma rota diferente, seu gerente direto precisa aprová-la. Após a reserva do voo, um dos hotéis pré-aprovados deve ser reservado para as datas certas. Se não há hotéis disponíveis, as passagens aéreas devem ser canceladas.
+
+![gerenciado de processo de reserva de viagens](./assets/livro-ddd/cap-9-padrao-comunicacao-gerenciador-processoreserva-viagem-2026-05-05_21-29.png)
+
+
+<details>
+<summary>Clique aqui para ver um exemplo de código</summary>
+
+```c#
+public class BookingProcessManager
+{
+    private readonly IList<IDomainEvent> _events;
+    private BookingId _id;
+    private Destination _destination;
+    private TripDefinition _parameters;
+    private EmployeeId _traveler;
+    private Route _route;
+    private IList<Route> _rejectedRoutes;
+    private IRoutingService _routing;
+    // ...
+
+    public void Initialize(Destination destination,
+                           TripDefinition parameters,
+                           EmployeeId traveler)
+    {
+        _destination = destination;
+        _parameters = parameters;
+        _traveler = traveler;
+        _route = _routing.Calculate(destination, parameters);
+
+        var routeGenerated = new RouteGeneratedEvent(
+            BookingId: _id,
+            Route: _route);
+
+        var commandIssuedEvent = new CommandIssuedEvent(
+            command: new RequestEmployeeApproval(_traveler, _route)
+        );
+
+        _events.Append(routeGenerated);
+        _events.Append(commandIssuedEvent);
+    }
+
+    public void Process(RouteConfirmed confirmed)
+    {
+        var commandIssuedEvent = new CommandIssuedEvent(
+            command: new BookFlights(_route, _parameters)
+        );
+
+        _events.Append(confirmed);
+        _events.Append(commandIssuedEvent);
+    }
+
+    public void Process(RouteRejected rejected)
+    {
+        var commandIssuedEvent = new CommandIssuedEvent(
+            command: new RequestRerouting(_traveler, _route)
+        );
+
+        _events.Append(rejected);
+        _events.Append(commandIssuedEvent);
+    }
+
+    public void Process(ReroutingConfirmed confirmed)
+    {
+        _rejectedRoutes.Append(route);
+        _route = _routing.CalculateAltRoute(destination,
+                                            parameters, rejectedRoutes);
+        var routeGenerated = new RouteGeneratedEvent(
+            BookingId: _id,
+            Route: _route);
+        
+        var commandIssuedEvent = new CommandIssuedEvent(
+            command: new RequestEmployeeApproval(_traveler, _route)
+        );
+
+        _events.Append(confirmed);
+        _events.Append(routeGenerated);
+        _events.Append(commandIssuedEvent);
+    }
+
+    public void Process(FlightBooked booked)
+    {
+        var commandIssuedEvent = new CommandIssuedEvent(
+            command: new BookHotel(_destination, _parameters)
+        );
+    
+        _events.Append(booked);
+        _events.Append(commandIssuedEvent);
+    }
+
+    // ...
+}
+```
+</details>
+
+
+
+
+**Tabela Comparativa Técnica**
+
+| Característica | Saga (Coreografada) | Gerenciador de Processo (Orquestrador) |
+| :--- | :--- | :--- |
+| **Ativação** | Reativa (Pub/Sub) | Explícita (Criação de instância de estado) |
+| **Lógica** | Distribuída entre os participantes | Centralizada no objeto do Processo |
+| **Conhecimento** | Cada serviço conhece apenas o próximo passo | O Gerenciador conhece o fluxo inteiro |
+| **Implementação** | Handlers de eventos simples | Máquina de estados (State Pattern) |
+
+Por que isso importa na prática?    
+Se você tem um fluxo simples (Pedido -> Pagamento -> Envio), uma **Saga** é mais desacoplada. Se você tem um fluxo onde o sistema precisa decidir caminhos alternativos baseados em tempo (timeouts), múltiplas respostas de diferentes serviços ou condições complexas de negócio, você **instancia um Gerenciador de Processo**.
+
+Dessa forma, o Gerenciador de Processo atua como um "coordenador" que possui sua própria identidade e ciclo de vida, enquanto a Saga é uma sequência de reações em cadeia.
+
