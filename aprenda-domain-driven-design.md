@@ -1318,3 +1318,73 @@ Se você tem um fluxo simples (Pedido -> Pagamento -> Envio), uma **Saga** é ma
 
 Dessa forma, o Gerenciador de Processo atua como um "coordenador" que possui sua própria identidade e ciclo de vida, enquanto a Saga é uma sequência de reações em cadeia.
 
+
+## Parte III
+
+Neste capítulo saímos da teoria e embarcamos na prática, aplicando em projetos reais.
+
+No capítulo 10 iremos identificar padrẽos que correspondem à complexidade e as necessidades do negócio.
+
+No capítulo 11 iremos aplicar o DDD para manter e evoluir as decisões do design de software ao longo do tempo.
+
+No capitulo 12 vamos aprendaer uma atividade prática que ajuda na descoberta do conhecimento de domínio e construção da linguagem obiqua. Essa atividade é conhecida como **EventStorming**.
+
+No capítulo 13  termos dicas e truques para aplicar DDD em projetos browfield, projetos que já existem num sistema que já existe e está em operação, também chamado de sistemas legados.
+
+> Projeto **Greenfield** é aquele onde começamos do zero, em um "campo verde" sem restrições. Já nasce modernizado.
+
+
+### Capítulo 10 - Heurística de Design
+Neste capítulo vamos falar sobre o "design" (software) do Domain Driven Design.
+
+
+#### Heurística
+Heurísticas no desenvolvimento de software são atalhos mentais, princípios ou técnicas baseadas na experiência (regras de bolso) utilizadas para guiar a tomada de decisão rápida, otimizar testes exploratórios e melhorar a usabilidade. Elas não garantem a solução perfeita, mas facilitam encontrar boas soluções diante de incertezas.
+
+Por exemplo, no desenvolvimento de software podemos utilizar a heurística para realizar um code review focado na orientação a objetos de acordo com algumas características no código. Isso não garante que seja um bom código com orientação a objetos, mas através da heurística podemos considerar que um código segue algumas características que são identificadas num bom código.
+
+
+#### Contextos delimitados
+> Existem muitas heurísticas úteis e reveladoras para definir os limites de um serviço. O tamanho é uma das menos úteis. Nick Tune
+
+
+#### Padrões de Implementação da Lógica de Negócio
+- O subdomínio rastreia dinheiro ou outras transações monetárias, tem que fornecer um log de auditoria consistente ou é necessária uma análise profunda de seu comportamento por parte da empresa? Em caso afirmativo, utilize o modelo de domínio orientado a eventos. Se não… 
+- A lógica de negócio do subdomínio é complexa? Em caso afirmativo, implemente um modelo de domínio. Se não… 
+- O subdomínio inclui estruturas de dados complexas? Em caso afirmativo, use o padrão do registro ativo. Se não… 
+- Implemente um script de transação.
+
+![Arvore de decisão de lógica de negócio](./assets/livro-ddd/cap-10-heuristica-arvore-decisao-2026-05-08_21-30.png)
+
+
+#### Padrões de Arquitetura
+- Modelo de domínio orientado a eventos requer CQRS
+- Modelo de domínio requer a arquitetura porta e adaptadores
+- O registro ativo requer arquitetura em comadas com uma camada de aplicativo (serviço)
+- O script de transação requer uma arquitetura em camada mínima (três camadas)
+
+O CQRS é bom para qualquer outra padrão que o subdomínio exige a representação de seus dados em multiplos modelos de persistentes.
+![Arvore de decisão de arquitetura](./assets/livro-ddd/cap-10-heurustica-decisao-arquitetura-2026-05-08_21-47.png)
+
+
+
+#### Estratégia de Teste
+Baseado na heurística no padrão de implementação de lógica de negócio e no padrão de arquitetura usado.
+![Estratégia de Teste](./assets/livro-ddd/cap-10-heuristica-estrategia-testes-2026-05-09_21-14.png)
+
+- pirâmide de teste: ambos modelos de domínio
+- losango de teste: registro ativo
+- pirâmide de teste invertida: script de transação
+![Estratégia de decisão de Testes](./assets/livro-ddd/cap-10-heuristica-estrategia-decisao-testes-2026-05-09_21-22.png)
+
+
+
+#### Árvore de Decisão do Design Tático
+![Estratégia de decisão do design táticos](./assets/livro-ddd/cap-10-heuristica-estrategia-decisao-design-tatico--2026-05-09_21-25.png)
+> Lembrando que isso é uma heurística e não deve ser tratado com uma regra obrigatória
+
+
+
+#### Conclusão
+Capítulo integrou as partes I e II.
+
