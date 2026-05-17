@@ -1388,3 +1388,220 @@ Baseado na heurística no padrão de implementação de lógica de negócio e no
 #### Conclusão
 Capítulo integrou as partes I e II.
 
+
+
+
+
+### Capítulo 11 - Desenvolvendo as Decisões de Design
+#### Mudanças nos dominios
+Tipos de subdomínios:
+- principal
+- generico
+- suporte
+
+Os subdomínos afetam nas decisões de design estratégico e tático
+- contexto delimitado
+- padrão de design relacionado a complexidade da lógica de negócio
+
+> Subdomínios mudam durante o passar do tempo
+
+
+**Principal para genérico**    
+Uma empresa que tem seu subdomínio principal hoje, pode perder espaço no mercado por uma empresa que entrega o mesmo serviço por uma fração da empresa principal. A empresa deixa de ser um subdomínio principal e passa a ser um subdomínio genérico. Agora os concorrêntes tem acesso ao mesmo serviço que era exclusivo inicialmente.
+
+
+**Genérico para principal**    
+Um exemplo real de uma empresa que transforma um subdomínio genérico em um subdomínio central é a Amazon. Como todos os prestadores de serviços, a Amazon precisava de uma infraestrutura na qual pudesse executar seus serviços. A empresa foi capaz de “reinventar” a forma como gerenciou sua infraestrutura física e, mais tarde, até mesmo transformá-la em um negócio lucrativo: Amazon Web Services.
+
+
+**De Suporte para Genérico**    
+Antes (Suporte): O sistema era um "ajudante" específico para o marketing. Baixa complexidade, focado em CRUD. A lógica era simples o suficiente para ser desenvolvida internamente sem grande esforço criativo.
+Depois (Genérico): Ao adotar uma solução de mercado (Open Source), a BuyIT reconhece que a gestão de contratos é um problema já resolvido por outros. O foco muda de "como construir" para "como integrar".
+
+
+**De suporte a principal**    
+Subdomínio de suporte normalmente tem a lógica mais simples e tem uma relação com o CRUD e o ETL, mas pode ocorrer de aumentar a complexidade e se tornar um diferencial econômico. Passando de suporte para subdomínio pricipal.
+
+
+**Principal para de suporte**    
+Subdomínio pricipal pode ter uma lógica complexa, mas não justifica o seu valor para empresa (lucratividade).
+
+
+**De genérico para suporte**    
+Um subdomínio genérico pode tornar-se um subdomínio de suporte se uma empresa (como a BuyIT) decidir abandonar uma solução externa/código aberto e optar por utilizar um sistema interno, devido à complexidade de integração.
+
+![](./assets/livro-ddd/cap-11-decisao-design-mudancas-dusbdominios-2026-05-11_21-54.png)
+
+
+
+#### Preocupações do design estratégico
+É possível ocorrer a evolução de um subdomínio de suporte para um subdomínio principal. Existe uma diferença clara entre a lógica de um e outro. No subdomínio de suporte temos uma lógica mais simples e usamos um padrão relativo como o registro ativo ou script de transação, mas no subdomínio principal utilizamos o modelo de domínio que é utilizados para uma lógica complexa com invariantes e regras complexas. Essa mudança não deve ser temida e não devemos utilizar um padrão de lógica complexa de forma geral e nem a lógica simples. Não deve ser trabalhoso troca de uma decisão de design e outra, desde conheça as diferenças entre cada um.
+
+
+**Script de Transação para Registro Ativo**    
+Tanto o script de transação como o registro ativo implementam a lógica de negócio de forma procedural. A diferença é que no registro ativo os dados estão estruturados e o acesso ao armazenamento de dados (banco de dados) não ocorre de forma direta como no script de transação. O processo de evolução será estruturar os dados complexos e acessar o banco de dados através do registro ativo.
+
+
+**Registro ativo para modelo de domínio**    
+A evolução do registro ativo é modelo de modelo de domínio. Neste caso, identifique as estruturas de dados que são objetos de valor (imutáveis).
+
+Identifique os limites transacinais nas estruturas de dados
+
+Altere todos os setters do registro ativo como privados para garantir que toda a lógica que modifique um estado seja explícita. A ideia é que o código quebre, mas agora ficará fácil identificar e corrigir seguindo a ideia do modelo de domínio. Ex:
+
+Aqui é a forma que o registro aivo resolve o problema:
+```c#
+public class Player
+{
+    public Guid Id { get; set; }
+    public int Points { get; set; }
+}
+
+public class ApplyBonus
+{
+    // ...
+
+    public void Execute(Guid playerId, byte percentage)
+    {
+        var player = _repository.Load(playerId);
+        player.Points *= 1 + percentage/100.0;
+        _repository.Save(player);
+    }
+}
+```
+
+Aqui é a alteração que quebra o código:
+```c#
+public class Player
+{
+    public Guid Id { get; private set; }
+    public int Points { get; private set; }
+}
+
+public class ApplyBonus
+{
+    // ...
+
+    public void Execute(Guid playerId, byte percentage)
+    {
+        var player = _repository.Load(playerId);
+        player.Points *= 1 + percentage/100.0;
+        _repository.Save(player);
+    }
+}
+```
+
+Aqui segue a ideia do modelo de dominio:
+```c#
+public class Player
+{
+    public Guid Id { get; private set; }
+    public int Points { get; private set; }
+
+    public void ApplyBonus(int percentage)
+    {
+        this.Points *= 1 + percentage/100.0;
+    }
+}
+
+public class ApplyBonus
+{
+    // ...
+
+    public void Execute(Guid playerId, int percentage)
+    {
+        var player = _repository.Load(playerId);
+        player.ApplyBonus(percentage);
+        _repository.Save(player);
+    }
+}
+```
+
+
+**Modelo de Domínio para Modelo de Domínio Orientado a Eventos**    
+A transição para um modelo de domínio orientado a eventos consiste em substituir a modificação direta de dados pela modelagem do ciclo de vida dos agregados por meio de eventos, enfrentando como principal desafio a migração do estado atual estático para um histórico de eventos retroativos baseado em estimativas ou eventos de migração.
+
+
+**Geração de Transições Passadas**    
+```js
+[
+    {
+        "lead-id": 12,
+        "event-id": 0,
+        "event-type": "lead-initialized",
+        "first-name": "Shauna",
+        "last-name": "Mercia",
+        "phone-number": "555-4753"
+    },
+    {
+        "lead-id": 12,
+        "event-id": 1,
+        "event-type": "contacted",
+        "timestamp": "2020-05-27T12:02:12.51Z"
+    },
+    {
+        "lead-id": 12,
+        "event-id": 2,
+        "event-type": "order-submitted",
+        "payment-deadline": "2020-05-30T12:02:12.51Z",
+        "timestamp": "2020-05-27T12:02:12.51Z"
+    },
+    {
+        "lead-id": 12,
+        "event-id": 3,
+        "event-type": "payment-confirmed",
+        "status": "converted",
+        "timestamp": "2020-05-27T12:38:44.12Z"
+    }
+]
+```
+Quando essa abordagem é utilizada, é impossível recuperar o histórico completo das transições do estado. No exemplo anterior, não sabemos quantas vezes o agente de vendas entrou em contato com a pessoa e, portanto, quantos eventos “contatados” não vimos.
+
+
+**Modelando Eventos de Migração**    
+```json
+{
+    "lead-id": 12,
+    "event-id": 0,
+    "event-type": "migrated-from-legacy",
+    "first-name": "Shauna",
+    "last-name": "Mercia",
+    "phone-number": "555-4753",
+    "status": "converted",
+    "last-contacted-on": "2020-05-27T12:02:12.51Z",
+    "order-placed-on": "2020-05-27T12:02:12.51Z",
+    "converted-on": "2020-05-27T12:38:44.12Z",
+    "followup-on": null
+}
+```
+
+#### Mudanças organizacionais
+Padrões de integração de contextos delimitados: 
+- parceria
+- núcleo compartilhado
+- camada conformista
+- camada anticorrupção
+- serviço de host aberto
+- caminhos separados
+
+**Parceria entre Cliente-Fornecedor**    
+
+**Cliente-Fornecedor para Caminhos Separados**    
+
+**Conhecimento de Domínio**    
+
+**Crescimento**    
+
+**Subdomínios**    
+
+**Contextos delimitados**    
+
+**Agregados**    
+
+
+
+#### Conclusão
+
+
+
+
