@@ -1605,3 +1605,177 @@ Padrões de integração de contextos delimitados:
 
 
 
+### Capítulo 12 - EventStorming
+
+#### O que é EventStorming?
+É uma ferramenta tática para compartilhar o conhecimento do domínio de negócio.
+
+
+#### Quem Deve Participar do EventStorming?
+> Lembre-se de que o objetivo do workshop é aprender o máximo possível com o mínimo de tempo. Convidamos pessoas-chave para o workshop e não queremos desperdiçar o precioso tempo delas. — Alberto Brandolini, criador do workshop de EventStorming
+
+Ideal com grupos diversos como: engenheiros, especialistas de domínio, proprietários do produtos, testadores, designer de UI/UX, pessoal de suporte etc.
+
+
+#### O que É necessário para o EventStorming?
+Utiliza papel e caneta, mas precisará também de:
+- espaço de modelagem: parede, quadro branco com bastante espaço
+- notas adesivas: com diversas cores definidas (próxima seção)
+- marcadores de texto: canetas para escrever nas notas adesivas
+- Petiscos: comida saudável
+- Sala: lugar com espaço para movimentação. Se possível, tire as cadeiras para evitar distração
+
+Exemplo de uma sala com mesa:    
+![Exemplo de uma sala com mesa](./assets/livro-ddd/cap-12-eventstorming-exemplo-sala-mesa-2026-05-17_14-18.png)
+
+
+
+
+#### Processo do eventstorming
+Composto de 10 etapas
+
+**Etapa 1: Exploração desestruturada**    
+Deve-se anotar nos papéis eventos no passado, exemplo, Fatura emitida, Pedido Criado, Item adicionado, Pedido finalizado, contrato registrado etc.
+
+![](./assets/livro-ddd/cap-12-eventstorming-etapa-1-2026-05-17_14-47.png)
+> utilize notas adesivas na cor laranja
+
+
+
+
+
+**Etapa 2: Linhas do tempo**    
+- organizar as notas adesivas se baseando na linha do tempo
+- remover as notas adesivas repetidas
+- iniciar pelo fluxo feliz e depois pensar nos cenários de erro
+
+![](./assets/livro-ddd/cap-12-eventstorming-etapa-2-linha-tempo-2026-05-17_14-55.png)
+
+
+
+
+
+**Etapa 3: Pontos problemáticos**    
+- problemas como gargalos, etapas manuais que precisam de automação, documentação ausente ou conhecimento de domínio em falta
+- notas adesivas cor de rosa (losango)
+
+![](./assets/livro-ddd/cap-12-eventstorming-etapa-3-problemas-2026-05-17_14-59.png)
+
+
+
+**Etapa 4: Eventos cruciais**    
+- eventos comerciais significativos que indiquem uma mudança no contexto ou na fase. São os chamados eventos cruciais e são marcados com uma barra vertical que divide os eventos antes e depois do evento crucial. Ex: “carrinho de compras inicializado”, “pedido inicializado”, “pedido enviado”, “pedido entregue” e “pedido devolvido”.
+
+> São indicadores de possíveis limites do contexto
+
+![](./assets/livro-ddd/cap-12-eventstorming-etapa-4-eventos-cruciais-2026-05-18_21-11.png)
+
+
+
+
+**Etapa 5: Comandos**    
+> Notas adesivas na cor **azul-claras** para o comandos. Nota adesiva amarela para se executado por um ator com papel específico como clientem administrador ou editor.
+
+**Evento de domínio** é algo do passado, já um **comando** descreve operações do sistema e ficam no imperativo:
+- publique campanha
+- reverta uma transação
+- envie pedido
+- registrar contrato
+
+![](./assets/livro-ddd/cap-12-eventstorming-etapa-5-comandos-2026-05-18_21-33.png)
+
+
+
+
+**Etapa 6: Políticas**    
+> Notas adesivas lilás para políticas que conectam eventos aos comandos. Caso ocorre em algum cenário, pode-se adicionar essas informações, exemplo, somente quando o cliente é VIP.
+- Comandos que não tem ator específico associado a eles. 
+- Uma política de automação é um cenário no qual um evento executa um comando.
+
+![](./assets/livro-ddd/cap-12-eventstorming-etapa-6-politicas-2026-05-18_21-44.png)
+
+
+
+
+**Etapa 7: Modelos de Leitura**    
+> Notas adesivas verdes para modelo de leitura
+- Modelo de leitura pode ser uma tela de sistema, um relatório, uma notificação etc. 
+- São posicionados antes dos comandos
+
+![](./assets/livro-ddd/cap-12-eventstorming-etapa-7-modelo-leitura-2026-05-18_21-55.png)
+
+
+
+**Etapa 8: Sistemas Externos**    
+> Notas adesivas cor-de-rosa para sistemas externos
+- São sistemas externos ao domínio
+![](./assets/livro-ddd/cap-12-eventstorming-etapa-8-sistema-externo-2026-05-19_21-13.png)
+
+
+
+
+**Etapa 9: Agregados**    
+> Notas adesivas amarelas de grandes para agregados
+- Um agregado recebe comandos e produz eventos.
+
+![](./assets/livro-ddd/cap-12-eventstorming-etapa-9-agregados-2026-05-19_21-17.png)
+
+
+
+**Etapa 10: Contexto Delimitados**    
+A última etapa é deixar os agragados que estejam relacionado entre si. 
+![](./assets/livro-ddd/cap-12-eventstorming-etapa-9-contextos-delimitados-2026-05-19_21-19.png)
+
+
+
+**Variantes**    
+Alberto Brandolini, criador do workshop de EventStorming, define esse processo como “orientação, não regras rígidas”.
+
+O real valor de uma sessão de EventStorming é o próprio processo:
+- o compartilhamento de conhecimento
+- o alinhamento de seus modelos mentais do negócio
+- a descoberta de modelos conflitantes
+- formulação da linguagem ubíqua
+
+
+
+#### Quando utilizar o eventstorming
+Razões:
+- construir uma linguagem obíqua
+- modelar o processo de negócio
+- explorar novos requisitos de negócio
+- Recuperar o conhecimento de domínio
+- Explorar formas de melhorar um processo de negócio existente
+- Integrar novos membros da equipe
+
+Ele terá menos sucesso quando o processo de negócio que você está explorando é simples ou óbvio, como seguir uma série de etapas sequenciais sem nenhuma lógica ou complexidade de negócio interessante.
+
+
+
+#### Dicas de realização
+![](./assets/livro-ddd/cap-12-eventstorming-dicas-realizacao-2026-05-19_21-45.png)
+
+- Evento
+- Comando
+- Ator
+- Políticas
+- Modelo de leitura
+- Sistema externo
+- Ponto problemático
+- Agregado
+- Evento crucial
+
+
+**Cuidado com a Dinâmica**    
+
+
+**EventStorming Remoto**    
+
+
+**Conclusão**    
+
+
+
+
+
+
