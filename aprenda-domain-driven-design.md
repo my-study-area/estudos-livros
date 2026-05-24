@@ -1779,3 +1779,84 @@ Ele terá menos sucesso quando o processo de negócio que você está explorando
 
 
 
+### Capítulo 13 - Domain-Driven Design na Prática
+A maior parte do tempo vamos trabalhar em projetos browfield (legados) e mesmo assim podemos aplicar o DDD. Por mais que o projeto não utilize de todas as ferramentas do DDD, ele pode se beneficiar do Domain Driven Design.
+
+
+#### Análise Estratégica
+Investir tempo na compreesão da estratégia de negócio e do estado atual da arquitetura de seus sistemas.
+
+
+**Entenda o domínio de negócio**    
+
+
+**Subdomínios principais**    
+- Vantagem competitiva
+
+
+**Subdomínios genéricos**    
+- Soluções prontas
+
+
+**Subdomínios de suporte**    
+- Componentes do sistema que não podem ser substituídos por soluções prontas
+
+
+
+
+#### Explore o design atual
+
+**Avalie o design tático**    
+
+**Avalie o design estratégico**    
+
+
+
+#### Estratégia de modernização
+Limites lógicos alinhados com os limites dos subdomínios    
+![](./assets/livro-ddd/cap-13-ddd-pratica-limites-alinhados-2026-05-20_21-59.png)
+
+
+
+#### MOdernização estratégica
+Problemas resolvidos pelos padrões de integrações:
+- relação do cliente-servidor
+- camada anticorrupção
+- Serviço de host aberto
+- caminhos separados
+
+
+#### Modernização Tática
+
+
+
+#### Cultive uma linguagem ubíqua
+
+**Padrão estrangulador**    
+A ideia é estrangular o sistema legado enquanto moderniza o sistema e congela as alterações no sistema legado.    
+![](./assets/livro-ddd/cap-13-ddd-pratica-estrangulador-fachada-2026-05-21_21-38.png)
+
+
+Para evitar a integração complexa, o contexto modernizado e antigo podem usar o mesmo banco de dados para evitar complexidades como transações distribuídas.    
+![](./assets/livro-ddd/cap-13-ddd-pratica-compartilhando-bd-2026-05-21_21-45.png)
+
+
+
+**Refatorando as decisões de design tático**    
+
+
+
+#### Domain-driven design pragmático
+
+
+#### Vendendo o domain driven designer 
+
+**Domain driven designer infiltrado**
+- Linguagem ubíqua
+- Contextos delimitados
+- Decisões de design tático
+- Modelo de domínio orientado a eventos
+
+
+#### Conclusão
+
