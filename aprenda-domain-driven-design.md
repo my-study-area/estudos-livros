@@ -2419,3 +2419,334 @@ A resposta correta é a **alternativa d: A decisão depende do domínio de negó
 
 * **Critérios de Decisão:** A escolha deve ser guiada por fatores como a necessidade de escalabilidade independente, autonomia da equipe e limites de confiança, e não por uma regra fixa de mapeamento.
 
+
+
+
+
+
+
+
+### Capítulo 15 - Arquitetura Orientada a Eventos
+EDA - Event-Driven Architecture 
+
+A arquitetura orientada a eventos está ligada ao DDD, afinal, é baseado em eventos. Pode ser tentador utilizar os eventos do DDD como base para o uso da arquitetura orientada a eventos, mas é uma ideia?
+
+O evento não é uma formula mágica que pode ser adicionadada em um sistema antigo para transformar num sistema distribuído, podendo gerar uma `grande bola de lama distribuída`.
+
+
+#### Arquitetura orientada a eventos
+A arquitetura orientada a eventos é um estilo arquitetônico no qual os componentes de um sistema se comunicam de forma assíncrona através da troca de mensagens de eventos.
+
+O padrão saga (capítulo 9) é um exemplo de fluxo de execução orientada a eventos.
+
+![](./assets/livro-ddd/cap-15-arquitetura-orientada-eventos-comunicacao-assincrona-2026-05-31_10-49.png)
+
+> Event Source capítulo 7 é diferente de arquitetura orientada a eventos. Event Sourcing é um método para capturar mudanças de estado como uma série de eventos. O event Sourcing ocorre dentro do serviço, já o EDA (Event-Driven Architecture) ocorre na comunicação dos serviços.
+
+Existem 3 tipos de eventos que serão abordados no capítulo.
+
+
+#### Eventos
+No EDA (Event-Driven Architecture) a troca de eventos permite a comunicação entre componentes para se tornar um sistema.
+
+
+##### Eventos, Comandos e Mensagens
+Evento e Mensagens são semelhantes quanto a definição, mas são diferentes. Um evento é uma mensagem, mas uma mensagem não é um evento. Existem 2 tipos de mensagens:
+
+**Evento**    
+- Uma mensagem que descreve uma mudança que aconteceu
+- Um evento não pode ser cancelado, somente pode ser feito uma reversão (ação compensatória), através de um comando, por exemplo, no padrão saga.
+
+**Comando**    
+- Uma mensagem que descreve uma operação que precisa ser realizada
+- Comando pode ser rejeitado (inválido devido uma regra de negócio)
+
+##### Estrutura
+Um evento é um registro de dados que pode ser serializado e transmitido usando a plataforma ce mensagens de sua escolha.
+
+Exemplo de um esquema de evento com metadados:
+```json
+{
+    "type": "delivery-confirmed",
+    "event-id": "14101928-4d79-4da6-9486-dbc4837bc612",
+    "correlation-id": "08011958-6066-4815-8dbe-dee6d9e5ebac",
+    "delivery-id": "05011927-a328-4860-a106-737b2929db4e",
+    "timestamp": 1615718833,
+    "payload": {
+        "confirmed-by": "17bc9223-bdd6-4382-954d-f1410fd286bd",
+        "delivery-time": 1615701406
+    }
+}
+```
+
+
+##### Tipos de eventos
+Os eventos são categorizados em: notificação de eventos, transferência de estado por eventos ou eventos de domínio.
+
+
+###### Notificação de eventos
+Relativo a uma mudança no domínio de negócio como: `PaycheckGenerated` e `CampaignPublished`
+```json
+{
+    "type": "paycheck-generated",
+    "event-id": "537ec7c2-d1a1-2005-8654-96aee1116b72",
+    "delivery-id": "05011927-a328-4860-a106-737b2929db4e",
+    "timestamp": 1615726445,
+    "payload": {
+        "employee-id": "456123",
+        "link": "/paychecks/456123/2021/01"
+    }
+}
+```
+
+
+![](./assets/livro-ddd/cap-15-arquitetura-orientada-eventos-fluxo-notificacao-2026-05-31_14-38.png)
+
+
+> Além disso, no caso de consumidores simultâneos, em que apenas um assinante deve processar um evento, o processo de consulta pode ser integrado com o bloqueio pessimista. Isso garante ao lado do produtor que nenhum outro consumidor será capaz de processar a mensagem.
+
+
+###### Transferência de estado por eventos (ECST)
+ECST: Event-Carried State Transfer
+
+Diferente das **mensagens de notificação de evento**, a transferência de estado por eventos envia todos os dados que refletem a mudançã de estado. POdendo ser de duas formas: um retrato completo do estado ou somente os dados alterados.
+
+Retrato completo:
+```json
+{
+    "type": "customer-updated",
+    "event-id": "6b7ce6c6-8587-4e4f-924a-cec028000ce6",
+    "customer-id": "01b18d56-b79a-4873-ac99-3d9f767dbe61",
+    "timestamp": 1615728520,
+    "payload": {
+        "first-name": "Carolyn",
+        "last-name": "Hayes",
+        "phone": "555-1022",
+        "status": "follow-up-set",
+        "follow-up-date": "2021/05/08",
+        "birthday": "1982/04/05",
+        "version": 7
+    }
+}
+```
+
+Retrato parcial:
+```json
+{
+    "type": "customer-updated",
+    "event-id": "6b7ce6c6-8587-4e4f-924a-cec028000ce6",
+    "customer-id": "01b18d56-b79a-4873-ac99-3d9f767dbe61",
+    "timestamp": 1615728520,
+    "payload": {
+        "status": "follow-up-set",
+        "follow-up-date": "2021/05/10",
+        "version": 8
+    }
+}
+```
+
+
+
+Os consumidores podem manter um fluxo local em cache com o estados das mensagens. Essa abordagem torna o sistema tolerante a falhas. Em vez de consultar as fontes de dados sempre que os dados são necessários, os dados podem ser armazenados em cache localmente, como na Figura abaix:
+
+![](./assets/livro-ddd/cap-15-arquitetura-orientada-eventos-bff-2026-05-31_15-05.png)
+
+
+
+
+###### Eventos de domínio
+O terceiro tipo de mensagem de evento é o evento de domínio que descrevemos no Capítulo 6. De certa forma, os eventos de domínio estão em algum lugar entre a notificação de eventos e as mensagens ECST (Event-Carried State Transfer): ambos descrevem um evento significativo no domínio de negócio e contêm todos os dados que descrevem o evento. Apesar das semelhanças, as mensagens são conceitualmente diferentes.
+
+
+
+##### Eventos de domínio versus notificação de evento
+As notificações de eventos são projetadas com a intenção de aliviar a integração com outros componentes. Os eventos de domínio, por outro lado, têm a intenção de modelar e descrever o domínio de negócio.
+
+
+##### Eventos de domínio versus transferência de estado por eventos
+Uma mensagem **transferência de estado por eventos** fornece informações suficientes para manter um cache local dos dados do produtor.
+
+Os dados incluídos nos eventos de domínio não pretendem descrever o estado do agregado. Em vez disso, eles descrevem um evento de negócio que aconteceu durante seu ciclo de vida.
+
+
+##### Tipos de evento: Exemplo
+
+```json
+eventNotification = {
+    "type": "marriage-recorded",
+    "person-id": "01b9a761",
+    "payload": {
+        "person-id": "126a7b61",
+        "details": "/01b9a761/marriage-data"
+    }
+};
+
+ecst = {
+    "type": "personal-details-changed",
+    "person-id": "01b9a761",
+    "payload": {
+        "new-last-name": "Williams"
+    }
+};
+
+domainEvent = {
+    "type": "married",
+    "person-id": "01b9a761",
+    "payload": {
+        "person-id": "126a7b61",
+        "assumed-partner-last-name": true
+    }
+};
+```
+
+- Notificação de Evento (eventNotification com type "marriage-recorded"): contém informação mínima e um link para obter mais detalhes
+- Transferência de estado por eventos (ecst com type "personal-details-changed"): fornece as informações necessárias, no caso, informação de autalização do último nome.
+- Eventdo de domínio (domainEvent com o type "married"): é modelado o mais próximo possível da natureza do evento no domíno de negócio, contendo o ID da pessoa e um indicador que simboliza uma pessoa que adotou o nome de seu parceiro ou não
+
+
+#### Projetando a integração orientada a eventos
+
+##### Grande bola de lama distribuída
+![](./assets/livro-ddd/cap-15-arquitetura-orientada-eventos-crm-2026-06-01_21-31.png)
+
+
+##### Acoplamento temporal
+O componente AdsOptimization tem que terminar seu processamento antes que o módulo Reporting seja disparado, para isso existe um delay no sitema Reporting.
+
+
+##### Acoplamento lógico
+Quando uma alteração em uma funcionalidade de negócio exige uma mudança sincronizada em múltiplos componentes ou contextos.
+
+O **acoplamento lógico** ocorre quando múltiplos componentes ou contextos delimitados implementam a mesma funcionalidade de negócio.
+* **O problema:** Como a lógica está duplicada, qualquer alteração na regra de negócio exige uma atualização sincronizada em todos os lugares onde ela foi implementada.
+* **Impacto:** Gera fragilidade (risco de inconsistência), perda de autonomia das equipas e desperdício de esforço com código duplicado.
+* **Conclusão:** É um sinal de que os contextos não são verdadeiramente autónomos, comprometendo a agilidade e a independência do sistema.
+
+
+##### Acoplamento de implementação
+Ocorre quando o modelo de dados ou o contrato de eventos de um contexto (ex: CRM) é alterado, forçando uma atualização imediata em todos os contextos que o consomem (ex: Marketing, AdsOptimization).
+- **O Problema:** Existe uma dependência direta na estrutura técnica (esquema) das mensagens.
+- **Impacto:** O emissor dos eventos perde a liberdade de evoluir seu modelo. Se os assinantes não forem atualizados simultaneamente, as projeções falham ou os dados tornam-se inconsistentes.
+- **Conclusão:** É uma forma de rigidez arquitetural que compromete a autonomia dos Bounded Contexts, pois o "consumidor" acaba acoplado aos detalhes de implementação do "provedor".
+
+> buscamos isolar o impacto das mudanças. Quando um contexto depende excessivamente da estrutura interna de outro (como o esquema exato de um evento), perdemos a autonomia que a estratégia de Bounded Contexts deveria nos proporcionar.
+
+
+##### Refatorando a Integração Orientada a Eventos
+
+ECST: Event-Carried State Transfer
+
+
+Compreendo perfeitamente a sua dúvida. É comum confundir "Eventos de Domínio" (Domain Events) com "Eventos de Integração" (Integration Events) ou padrões de mensageria, como o **ECST**.
+
+Vamos desmistificar esse texto do livro, que é um ponto crucial do DDD moderno.
+
+##### O Problema: O "Acoplamento por Eventos"
+
+O texto está alertando sobre um erro muito comum: **expor todos os eventos internos do seu sistema para fora.**
+
+Imagine que no seu `CRM` você tem um evento chamado `ClienteCadastrado`, `ClienteAtualizouEndereco`, `ClienteMudouTelefone`. Se você expõe tudo isso para o `Marketing` e `AdsOptimization`, o que acontece?
+
+1. **Acoplamento de Implementação:** Se o seu `CRM` mudar a estrutura interna dele (o modelo de banco de dados, por exemplo), todos os serviços que consomem esses eventos quebrarão. Você virou refém do seu próprio modelo interno.
+2. **Acoplamento Lógico:** Os consumidores precisam saber *como* o `CRM` funciona para montar o estado deles. Eles fazem o trabalho pesado que o produtor deveria ter feito.
+
+
+##### A Solução: O Padrão ECST (Event-Carried State Transfer)
+O texto sugere que, em vez de disparar qualquer evento interno, você deve criar um **modelo específico de integração**.
+
+* **O que é o "Estado Projetado":** É um documento (geralmente um JSON) que contém exatamente o que o consumidor precisa, no formato que o consumidor precisa.
+* **Encapsulamento:** É o `CRM` quem prepara esse "Estado Projetado". O `CRM` traduz o modelo interno dele para esse modelo de integração.
+* **Contrato Orientado ao Consumidor:** Você não envia o que "acha" que eles precisam. Você conversa com os times de `Marketing` e `AdsOptimization`, entende o que eles precisam para funcionar e cria um **contrato** (uma interface de dados) que o `CRM` promete entregar.
+
+##### Visualizando a Mudança
+| Abordagem Ruim (Acoplada) | Abordagem Boa (ECST / Integrada) |
+| --- | --- |
+| Enviar todo evento interno do CRM. | Enviar apenas o "Estado Projetado" consolidado. |
+| Consumidor precisa montar a lógica do dado. | Produtor encapsula a lógica e entrega o dado pronto. |
+| Se o CRM muda o interno, o sistema quebra. | Se o CRM muda o interno, ele apenas atualiza o "tradutor" para o contrato de integração. |
+
+##### Resumo para o seu dia a dia
+
+O **ECST** serve para colocar uma camada de proteção entre sistemas. O **CRM** (produtor) diz: *"Eu não me importo com como vocês funcionam, mas eu garanto que entregarei este pacote de informações (Estado Projetado) sempre que algo importante acontecer"*.
+
+Os consumidores, por sua vez, param de tentar "adivinhar" o que aconteceu no produtor e passam a apenas consumir o estado final que lhes interessa. Isso é **desacoplamento** real.
+
+
+![](./assets/livro-ddd/cap-15-arquitetura-orientada-eventos-refatorando-orientado-eventos-2026-06-03_21-15.png)
+
+Para lidar com o acoplamento temporal entre os contextos delimitados AdsOptimization e Reporting, o componente AdsOptimization pode publicar uma mensagem de notificação de eventos, disparando o componente Reporting para buscar os dados de que necessita. Esse sistema refatorado é mostrado na Figura
+
+
+#### Heurística do design orientado a eventos
+
+##### Presuma o pior
+Andrew Groven disse:
+- a rede é lenta
+- Os servidores falharão no momento mais inconveniente possível. 
+- Os eventos chegarão fora de ordem.
+- Os eventos serão duplicados.
+
+A palavra “orientada” em arquitetura orientada a eventos significa que todo o seu sistema depende do sucesso da entrega das mensagens. Portanto, evite a mentalidade “as coisas ficarão bem”. Verifique se os eventos são sempre entregues de forma consistente, não importa o que aconteça: 
+- Use o padrão da caixa de saída para publicar mensagens de forma confiável. 
+- Ao publicar mensagens, verifique se os assinantes serão capazes de reduplicar as mensagens, identificar e reorganizar as mensagens fora de ordem. 
+- Utilize os padrões saga e gerenciador de processo ao orquestrar processos de contextos delimitados cruzados que exigem a realização de ações compensatórias.
+
+
+##### Utilize eventos públicos e privados
+Em sistemas complexos, um erro comum é "vazar" detalhes internos de implementação para outros contextos. Khononov enfatiza que eventos de domínio não devem ser tratados apenas como simples mensagens técnicas, mas como **parte integrante da interface pública** do seu Contexto Delimitado.
+
+Aqui está o resumo dos conceitos apresentados na imagem:
+- **Interface Pública vs. Interna:** Assim como em uma empresa, onde os departamentos têm processos internos (privados) e comunicados oficiais (públicos), o seu Bounded Context deve proteger sua lógica interna. Ao publicar eventos, você está definindo um contrato público.
+- **Linguagem Publicada:** Os eventos precisam estar alinhados à "linguagem publicada" do seu contexto. Se o nome ou o conteúdo do evento for confuso ou puramente técnico, você criará um acoplamento indesejado com os sistemas consumidores.
+- **Mensagens de Transferência de Estado (State Transfer):** São modelos compactos e focados. Em vez de enviar o objeto inteiro do seu modelo de domínio (que pode conter regras de negócio e dados sensíveis), você envia apenas o "essencial" que o consumidor precisa para realizar o trabalho dele.
+- **Mensagens de Notificação:** Uma forma ainda mais minimalista de comunicação, onde o evento serve apenas como um gatilho ("algo aconteceu"), forçando o consumidor a consultar a fonte (o seu contexto) caso precise de mais detalhes. Isso minimiza drasticamente a superfície de exposição da sua interface.
+
+###### Analogia do Mundo Real
+Imagine o setor de **Recursos Humanos** de uma empresa.
+- **Eventos Privados:** As discussões sobre o desempenho interno de um funcionário ou as notas de uma avaliação são privadas (o "modelo de implementação").
+- **Evento Público:** Quando o RH emite um comunicado oficial dizendo: *"Fulano foi promovido"*. Este é o evento público. Ele não precisa explicar *por que* (os detalhes internos), apenas informa o fato necessário para que o departamento financeiro atualize o salário e o TI atualize o acesso.
+
+> **Nota importante:** Khononov reforça que o cuidado com esses eventos é essencial, especialmente em sistemas que utilizam *Event Sourcing* ou Agregados orientados a eventos, onde o risco de expor o modelo interno é maior.
+
+
+#### Avalie os requisitos de consistência
+
+Avalie os requisitos de consistência Ao projetar a comunicação orientada a eventos, avalie os requisitos de consistência dos contextos delimitados como uma heurística adicional para a escolha do tipo de evento:
+- Se os componentes puderem aceitar finalmente dados consistentes, use a mensagem de transferência de estado por eventos. 
+- Se o consumidor precisar ler a última gravação no estado do produtor, envie uma mensagem de notificação de evento, com uma consulta posterior para buscar o estado atualizado do produtor.
+
+---
+A escolha do tipo de evento não é apenas sobre o que esconder ou mostrar, mas sobre **como o sistema consumidor precisa lidar com os dados**. Vlad Khononov nos dá uma heurística prática baseada na necessidade de "frescor" da informação:
+- **Consistência Eventual (Mensagem de Transferência de Estado):** Se o seu sistema consumidor aceita trabalhar com um dado que pode estar ligeiramente "atrasado" ou desatualizado por alguns instantes, envie os dados dentro do próprio evento. É rápido e desacoplado.
+- **Consistência Imediata/Leitura Atualizada (Mensagem de Notificação + Consulta):** Se o consumidor precisa garantir que está lendo o dado mais recente (o "estado atual" do produtor), não envie o dado no evento. Envie apenas uma **notificação** (um "sinal" de que algo mudou) e obrigue o consumidor a consultar a fonte oficial para buscar o valor exato no momento da leitura.
+
+##### Em resumo:
+- Precisa de **velocidade e tolerância** ao atraso? **Transfira o estado** no evento.
+- Precisa de **precisão absoluta** no valor? **Notifique** e deixe o consumidor buscar o dado atualizado na fonte.
+
+
+#### Conclusão
+EDA (Event-Driven Architecture)
+
+No capítulo falou sobre os 3 tipos de eventos:
+- notificação de evento
+- transferência de estado por eventos
+- evento de domínio
+
+O uso inadequado do tipo de evento transforma o sistema bseado em EDA (Event-Driven Architecture), uma grande bola de lama. 
+- Avalie os requisitos de consistência 
+- Tenha cuidado ao expor os detalhes
+- Garanta que o sistema entregue as mensagens, mesmo em caso de problemas técnicos e interrupções.
+
+
+#### Exercícios
+1. D
+2. B
+3. A
+4. ~~D~~ B    
+R: S2 deve publicar notificações de evento, sinalizando para que S1 emita uma solicitação síncrona para obter a informação mais atualizada.
+
+> Precisa de **velocidade e tolerância** ao atraso? **Transfira o estado** no evento. Precisa de **precisão absoluta** no valor? **Notifique** e deixe o consumidor buscar o dado atualizado na fonte.
+
+
+
