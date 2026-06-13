@@ -2750,3 +2750,234 @@ R: S2 deve publicar notificações de evento, sinalizando para que S1 emita uma 
 
 
 
+### Capítulo 16 - Malha de Dados
+- OLTP (On line Transaction Process)
+- OLAP (On line Analytic Process)
+
+
+#### Modelos de dados analíticos versus modelos de dados transacionais
+- ML: Machine Learning
+- OLTP implementa transações em tempo real
+
+![](./assets/livro-ddd/cap-16-malha-dados-oltp-schema-relacional-2026-06-05_21-42.png)
+
+- OLAP fornece insight sobre o desempenho das atividades e como obter mais valor do negócio
+- OLAP concentra nas atividades da modelagem das tabelas de fatos e dimensões
+
+
+##### Tabela de fatos
+- Fatos: representa as atividades de negócio que já aconteceram. 
+
+![](./assets/livro-ddd/cap-16-malha-dados-tabela-fatos-2026-06-05_21-53.png)
+
+- Os registros da tabela de fatos nunca são excluídos ou modificados. A única forma de mostrar um dado desatualizado, é anexando um novo registro com o estado atualizado para ser possível identificar que o registro possui um novo estado.
+
+![](./assets/livro-ddd/cap-16-malha-dados-ciclo-vida-caso-suporte-2026-06-05_21-58.png)
+
+
+##### Tabela de dimensões
+Se um fato representa um processo ou uma ação do negócio (um verbo), uma dimensão descreve o fato (um adjetivo).
+
+![](./assets/livro-ddd/cap-16-malha-dados-tabela-dimensoes-2026-06-06_19-43.png)
+
+
+Para entender a Tabela de Dimensões, observe a seguinite analogia:
+> Se um **fato** representa um processo ou uma ação do negócio (ele funciona como um **verbo**), a **dimensão** descreve os detalhes desse fato (funcionando como um **adjetivo**).
+
+###### O que é uma Tabela de Dimensões?
+As tabelas de dimensões servem para dar contexto e descrever os atributos dos fatos que ocorrem na empresa. Elas são referenciadas através de chaves estrangeiras (*Foreign Keys*) a partir de uma tabela de fatos central.
+
+Olhando para o modelo clássico em estrela apresentado na `Figura 16-4`, podemos ver isso de forma prática:
+
+- **O Fato (`Fact_SolvedCases`):** É o verbo, a ação que aconteceu — "Casos Resolvidos".
+- **As Dimensões ao redor:** São os adjetivos que contextualizam o ocorrido:
+- `Dim_Agents`: *Quem* resolveu o caso?
+- `Dim_Customers`: *Para quem* o caso foi resolvido?
+- `Dim_Date`: *Quando* a resolução aconteceu?
+
+
+###### Por que as Dimensões são Altamente Normalizadas?
+Uma das grandes distinções que faço no livro entre os modelos operacionais e analíticos reside na **previsibilidade das consultas**.
+* **No Modelo Operacional:** Nós conseguimos prever exatamente como o software vai consultar o banco de dados para suportar as regras de negócio diárias.
+* **No Modelo Analítico:** Os padrões de consulta são totalmente **imprevisíveis**. Os analistas de dados precisam de flexibilidade extrema para examinar as informações por diferentes prismas e responder a perguntas de negócio que ainda nem foram formuladas.
+
+É por essa razão que as dimensões exigem um nível de alta normalização. Essa estrutura segmentada é o que dá suporte para que as ferramentas analíticas façam filtragens, agrupamentos e cruzamentos dinâmicos e eficientes em tempo de execução.
+
+
+##### Modelos analíticos
+- Esquema estrela: se baseia nas relações "muitos para um" entre os fatos e as dimensões. Cada registro dimensional é usado por muitos fatos. A chave estrangeira de um fato aponta para um registro dimensional único
+
+![](./assets/livro-ddd/cap-16-malha-dados-esquema-estrela-2026-06-07_10-41.png)
+
+
+- Esquema floco de neve: baseado em fatos e dimensões. As dimensões são multiníveis: cada dimensão e normalizada em dimensões mais finas
+
+![](/assets/livro-ddd/cap-16-malha-dados-esquema-floco-neve-2026-06-07_10-46.png)
+
+Para entender o **esquema floco de neve (snowflake schema)**, imagine a organização de um grande guarda-roupa de uma loja de departamentos. No modelo tradicional "estrela", você colocaria todas as informações de um produto (cor, tamanho, marca, país da marca) em uma única etiqueta pendurada nele. Já no esquema floco de neve, a etiqueta principal diz apenas a marca e o tamanho; se você quiser saber a história ou o país daquela marca, precisa olhar um catálogo separado conectado a ela.
+
+Em termos arquiteturais e de modelagem de dados, Khononov explica que o esquema floco de neve possui características bem específicas:
+
+###### ❄️ Estrutura e Funcionamento
+- **Mesma base estrutural:** Assim como o esquema estrela, ele é construído sobre os conceitos de **fatos** (os eventos de negócio quantificáveis, como vendas ou transações) e **dimensões** (os contextos que descrevem esses fatos, como tempo, localização ou produto).
+- **Dimensões multinível:** A grande diferença é que, no floco de neve, as dimensões são normalizadas em dimensões mais finas. Isso significa que uma tabela de dimensão pode se ramificar em outras subdimensões, criando uma estrutura geométrica que lembra um floco de neve real.
+
+
+- **Vantagens:** Devido à normalização adicional, o sistema utiliza **menos espaço para armazenar os dados** dimensionais e as tabelas ficam isoladas, tornando-as mais fáceis de manter e atualizar.
+- **Desvantagens:** Na hora de gerar relatórios e consultar os fatos, o banco de dados precisa realizar a junção (*join*) de muito mais tabelas. Isso exige **mais recursos computacionais** e pode impactar o tempo de resposta das consultas.
+
+
+
+#### Plataformas de gerenciamento de dados analíticos
+Vamos discutir duas arquiteturas de dados analíticas comuns: data warehouse e data lake
+
+##### Data Warehouse (DWH)
+ETL:
+- extraia os dados da empresa
+- transforme os dados de origem em um modelo analítico
+- carrega os dados em um banco de dados orientado à analise 
+
+Existe casos onde a transformação requer uma armazenamento temporário para os dados recebidos. Isto é conhecido como a área de preparação.
+
+![](./assets/livro-ddd/cap-16-malha-dados-datawarehouse-2026-06-07_14-50.png)
+
+O Data Mart surge justamente para lidar parcialmente com essa complexidade.
+
+Definição: Um Data Mart é um banco de dados que armazena informações focadas em necessidades analíticas bem definidas, geralmente voltadas para atender a um único departamento ou área de negócio (como o Data mart do marketing ou o Data mart do serviço de atendimento exemplificados na imagem).
+
+Alinhamento com o Negócio: Em vez de tentar unificar o significado de "cliente" ou "venda" para a empresa inteira em um modelo monolítico de dados, o Data Mart respeita as necessidades analíticas específicas daquele contexto operacional.
+
+![](./assets/livro-ddd/cap-16-malha-dados-data-mart-2026-06-07_15-00.png)
+
+
+Padrão de comunicação entre sistema operacionais (OLTP) e Data Warehouse (OLAP) utilizam o esquema completo dos sistemas transacionais e mudanças nos modelos de dados desses sistema afetam os sistemas analíticos.
+
+![](./assets/livro-ddd/cap-16-malha-dados-comunicacao-dados-sist-operacionais-e-data-warehouse-2026-06-07_15-05.png)
+
+
+##### Data Lake
+Tem a mesma base do data warehouse, consumir dados de sistemas operacionais e transformá-lo em modelo analítico. Existe uma diferença, os dados não são transformados imediatamente num modelo analítico. Os dados são salvos em sua forma bruta e somente depois é tranformado num modelo analítico.
+
+![](./assets/livro-ddd/cap-16-malha-dados-arquitetura-datalake-2026-06-08_21-25.png)
+
+A geração do modelo analítico de forma tardia, gera complexidade no sistema inteiro. É comum existir diversão versões do mesmo script:
+
+![](./assets/livro-ddd/cap-16-malha-dados-versoes-etl-datalake-2026-06-08_21-28.png)
+
+Os data lakes não tem esquemas e facilitam o consumo de dados, mas também se torna desafiador sendo também conhecido como pântano quando mal planejados.
+
+
+
+##### Desafios das arquiteturas Data Warehouse e Data Lake
+
+
+##### Malha de dados
+Em certo sentido, a malha de dados é o DDD para os dados analíticos. Assim como no DDD que traça os limites e protegem seu conteúdo, essa arquitetura define e protege os limites do modelo e da propriedade dos dados analíticos.
+
+Os quatro princípios fundamentais da malha de dados são:
+- decompor dados nos domínios
+- dados como produto
+- permitir a autonomia 
+- e criar um ecossistema
+
+
+##### Decompor os dados nos domínios
+Na abordagem data warehouse e data lake visa unificar os dados num modelo único. A arquitetura de malha de dados é decomposto de acordo com os limites dos contextos delimitados, mas aqui chamados de os limites de propriedade dos modelos analíticos.
+
+![](./assets/livro-ddd/cap-16-malha-dados-limites_propriedade_modelos_analiticos_limites_contextos_delimitados-2026-06-09_22-09.png)
+
+
+##### Dados como Produto
+Na malha de dados, os dados não são de origens dúvidosas como banco de dados internos, arquivos de logs etc, vêm de portas de saídas bem definidas.
+
+![](./assets/livro-ddd/cap-16-malha-dados-porta-saida-2026-06-09_22-21.png)
+
+
+Os dados analíticos devem ser tratados como qualquer api pública:
+- esquema bem definido que descreva os dados servidos em seu formato
+- deve ter versões como uma api normal e gerenciar as mudanças de integração
+
+> Na malha de dados existe uma preocupação de alto nível quanto a qualidade dos dados
+
+> Consumidores podem querer os dados de formas diferentes: executando consultas SQL ou um arquivo num serviço de armazenamento de objetos. Como resultado o **produto de dados** tem que ser poliglota, fornecendo os dados em formatos que atendam aos consumidores.
+
+> Para aplicar o princípio de dados como produto, as equipes de produto (que tradicionalmente só focam em sistemas operacionais) precisam incluir **especialistas orientados a dados**. Essa contratação é o que completa a estrutura de uma equipe verdadeiramente multifuncional.
+
+
+
+<details>
+  <summary>Explicação gerada por IA</summary>
+
+  Para entender a relação entre as **portas de saída (output ports)** e o Data Mesh, precisamos dar um passo atrás e entender o problema que Khononov e a criadora do Data Mesh (Zhamak Dehghani) estão tentando resolver.
+
+
+  ###### O Problema das Arquiteturas Tradicionais
+
+  Nas arquiteturas clássicas (como Data Lakes ou Data Warehouses centrais), os dados operacionais são "jogados" para fora dos sistemas através de processos de ETL (Extração, Transformação e Carga) que buscam informações de fontes duvidosas, como bancos de dados internos de produção ou arquivos de log.
+
+  > **A Analogia do Restaurante:** Imagine que a cozinha de um restaurante (o sistema operacional) joga o lixo e as sobras de ingredientes em uma caçamba nos fundos. Depois, uma equipe de analistas (a equipe de dados) precisa revirar essa caçamba para tentar descobrir quais pratos foram os mais vendidos e se a qualidade dos ingredientes estava boa. É nojento, ineficiente e propenso a erros.
+
+  No desenvolvimento de software tradicional, o banco de dados operacional é um detalhe de implementação interna de um **Contexto Delimitado (Bounded Context)**. Quando analistas de dados tocam diretamente nesse banco, qualquer mudança no modelo de dados que a equipe de desenvolvimento fizer quebra os relatórios da empresa.
+
+
+
+  ###### A Solução: Portas de Saída no Data Mesh
+  O Data Mesh resolve isso aplicando os princípios do DDD ao mundo dos dados analíticos. Em vez de um grande repositório centralizado cuidado por uma equipe de dados isolada, **cada Contexto Delimitado passa a ser responsável por seus próprios dados analíticos**. É aqui que entram os **Dados como Produto** e as **Portas de Saída**.
+
+  A relação funciona da seguinte forma:    
+  **1. O Bounded Context vira o Dono do Produto de Dados**    
+  A mesma equipe que desenvolve as regras de negócio e as APIs operacionais (o back-end) agora também é dona dos dados analíticos gerados por aquele contexto. Eles conhecem o significado real do negócio por trás daqueles dados melhor do que ninguém.
+
+  **2. A Porta de Saída é o Contrato Público**    
+  Como mostra acima, a equipe de produto expõe os dados operacionais transformados em um **Modelo de Análise** através de portas de saída bem definidas.
+
+  Essas portas de saída são **poliglotas**, o que significa que o mesmo dado analítico pode ser oferecido em diferentes formatos para atender a diferentes necessidades de consumo, por exemplo:
+
+  * Um fluxo de eventos em tempo real (como tópicos no Kafka).
+  * Arquivos de alta performance para queries analíticas (como arquivos Parquet no S3).
+  * Acesso direto via SQL em um data warehouse analítico descentralizado.
+
+
+  ###### Os Três Pilares da Porta de Saída como API Pública
+
+  Conforme o texto da sua imagem destaca, para que essa relação funcione, a porta de saída deve tratar o dado analítico com o mesmo rigor que engenheiros tratam uma API pública:
+
+  * **Descoberta Fácil:** Deve ser fácil para outras equipes descobrirem onde essas portas de saída estão e o que elas oferecem (usando catálogos de dados).
+  * **Esquema Bem Definido:** Os dados analíticos precisam ter um contrato claro (schemas). Se a equipe do Bounded Context alterar a estrutura dos dados, eles precisam gerenciar o versionamento para não quebrar os consumidores.
+  * **Confiabilidade e SLAs:** A equipe garante a qualidade, a frequência de atualização e a veracidade daquele dado. Se o dado estiver incorreto, a responsabilidade é da equipe dona do contexto originário, e não de um time de engenharia de dados central.
+
+  Em resumo, a **porta de saída** é o mecanismo técnico e arquitetural que viabiliza o princípio de **Dados como Produto** dentro do Data Mesh, garantindo que os dados analíticos cruzem a fronteira do Contexto Delimitado de forma limpa, segura e documentada.
+
+</details>
+
+
+##### Permitir autonomia
+
+
+##### Criar um ecossistema
+- A etapa final é nomear um orgaão de governança
+
+![](./assets/livro-ddd/cap-16-malha-dados-grupo-governanca-2026-06-12_21-22.png)
+
+
+
+##### Combinando Malha de Dados e Domain-driven Design
+
+![](./assets/livro-ddd/cap-16-malha-dados-cqrs-versoes-esquema-dados-analiticos-2026-06-12_21-33.png)
+
+
+
+##### Conclusão
+Foi abordado sobre os modelos predominantes para os dados analíticos como o esquema estrela, floco de neve e o gerenciamento feito no data warehouse e nos data lakes.
+
+Em sua essênica, é aplicado os mesmo princípios do DDD, mas para os dados analíticos. Até utilizam de interfaces públicas e o CQRS.
+
+
+##### Exercícios
+1. D
+2. B
+3. C
+4. A
+
+
+
