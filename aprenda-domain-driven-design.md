@@ -11,8 +11,8 @@ Wolfdesk: gestão de tickets de help desk
 - escala de forma elastica utilizando computação sem servidor (serverless)
 
 
-## Parte I
-### Capítulo 1
+## Parte I - Design Estratégico
+### Capítulo 1 - Analisando os Domínios de Negócios
 - design estratégico
   - domínio
     - subdomínio principal
@@ -20,12 +20,12 @@ Wolfdesk: gestão de tickets de help desk
     - subdomínio suporte
 - design tático
 
-### Capítulo 2
+### Capítulo 2 - Descobrindo o Conhecimento de Domínio
 - linguagem ubíqua: liguagem comum utilizada entre pessoas técnicas e de negócio. Como ferramentas podemos utilizar uma wiki, a linguagem gherkin e NDpend para verificar o uso de termos da linguagem ubíqua.
 - modelo: representação do mundo real, por exemplo, todo mapa é um modelo. A representação de negócio dos especialistas têm como resultado um modelo de negócio.
 
 
-### Capítulo 3
+### Capítulo 3 - Administrando a Complexidade do Domínio
 Inconsistência:
 - lead no marketing: receber informações de um cliente
 - lead no departamento de vendas: todo o ciclo do processo de vendas
@@ -34,7 +34,7 @@ Inconsistência:
 - uma equipe pode trabalhar com um ou mais contextos delimitados, mas duas equipes não podem trabalhar num mesmo contexto delimitado
 
 
-### Capítulo 4
+### Capítulo 4 - Integrando Contextos Delimitados
 comunicação e integração de contexto delimitado
 - cooperação
   - padrão parceria: equipes se cooperam e se adaptam - sem dramas ou conflitos
@@ -47,8 +47,8 @@ comunicação e integração de contexto delimitado
 
 Mapa de contexto: é a representação visual das relações e integrações entre os diferentes Contextos Delimitados (Bounded Contexts) de um sistema. É a fotografia estratégica do sistema. Ele não mostra tabelas ou classes, mas sim como os Bounded Contexts estão ligados e qual o nível de acoplamento (técnico e organizacional) entre eles.
 
-## Parte II
-### Capítulo 5 - Implementando uma lógica de negócio simples
+## Parte II - Design Tático
+### Capítulo 5 - Implementando uma Lógica de Negócio Simples
 - script de tranasação (transcation script): organiza a lógica de negócio em que cada procedimento lida com uma única solicitação de apresentação (Martin Fowler). O comportamento do procedimento é manter consistente em caso de sucesso e falha, isso significa que no caso de falha, deve reverter ou executar ações compensatórias.
   - Focado no processo. Um método faz tudo (lógica + banco). Ideal para fluxos lineares em subdomínios de baixo valor.
   - utilizado em subdomínio genérico e subdomínio de suporte
@@ -1319,7 +1319,7 @@ Se você tem um fluxo simples (Pedido -> Pagamento -> Envio), uma **Saga** é ma
 Dessa forma, o Gerenciador de Processo atua como um "coordenador" que possui sua própria identidade e ciclo de vida, enquanto a Saga é uma sequência de reações em cadeia.
 
 
-## Parte III
+## Parte III - Aplicando o Domain-Driven Design na Prática
 
 Neste capítulo saímos da teoria e embarcamos na prática, aplicando em projetos reais.
 
@@ -1861,7 +1861,7 @@ Para evitar a integração complexa, o contexto modernizado e antigo podem usar 
 #### Conclusão
 
 
-## Parte IV
+## Parte IV - Relações com Outras Metodologias e Padrões
 **Relações com Outras Metodologias e PadrõesRelações com Outras Metodologias e Padrões**    
 - No capítulo 14 fala sobre a interação entre os microserviços e o DDD 
 - No capítulo 15 fala sobre a arquitetura orientada a eventos e o DDD 
