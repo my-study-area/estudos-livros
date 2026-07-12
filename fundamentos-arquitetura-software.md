@@ -155,7 +155,7 @@ São os atributos que o sistema deve suportar como:
 
 
 ### Assegurar a conformidade com as decisões
-- conformidade é verificar/fiscalizar se o que foi decidido continua sendo obedecido/respseitado
+- conformidade é verificar/fiscalizar se o que foi decidido continua sendo obedecido/respeitado
 
 <details>
   <summary>Gerado por IA</summary>
@@ -378,4 +378,203 @@ Exemplos:
 ### Leis da arquitetura de software:
 1. Tudo na arquitetura de software é uma concessão. — Primeira Lei da Arquitetura de Software
 2. O porquê é mais importante do que o como. — Segunda Lei da Arquitetura de Software
+
+
+
+# PARTE I: Fundamentos
+Para entender trade-offs, os desenvolvedores dever compreender conceits e componentes relacionados:
+- terminomologia
+- modularidade
+- acomplamento
+- conascência
+
+> conascência: relacionado a acoplamento. A conascência (connascence) é uma métrica e conceito de arquitetura de software que mede o grau de dependência entre diferentes partes ou componentes de um sistema. Ela indica que, se uma mudança em um componente exige a modificação de outro para que o sistema continue funcionando, esses componentes são conascentes
+
+> A conascência é um conceito que ajuda a entender e gerenciar o grau de dependência entre diferentes partes de um sistema de software. Se você já lidou com sistemas complexos, provavelmente já experimentou os desafios de manter componentes sincronizados em mudanças ou de evitar falhas causadas por pequenas alterações em módulos interdependentes. Conascência é sobre como partes do sistema estão “cientes” umas das outras — e quanto mais entendemos isso, mais controlamos a complexidade e melhoramos a manutenção do sistema
+
+Fontes: 
+- https://www.youtube.com/watch?v=dRlaLUkt7Wc&t=668s
+- https://medium.com/@gustavoeyros/conasc%C3%AAncia-em-arquitetura-de-software-o-que-%C3%A9-e-por-que-importa-af84750e17fa
+
+
+# Capítulo 2: Pensamento arquitetônico
+- pensamento arquitetônico: o que pensa um dev e um arquiteto é diferente
+Os quatro aspectos:
+1. diferença de arquitetura e design
+2. grande variedade de conhecimento técnico
+3. entender, analisar e reconciliar  os trade-offs
+4. entender motivação comercial e como se traduz em preocupação arquitetônica
+
+
+
+## Arquitetura Versus Design
+Arquitetura:
+- identificar as características
+- selecionar os padrões
+- criar componentes
+
+Design:
+- criar diagrama de classes para cada componente
+- criar telas de interface
+- desenvolver
+- testar
+
+![](./assets/livro-fundamentos-arquitetura/cap-2-arquitetura-versus-design-2026-07-10_22-16.png)
+
+- o modelo acima tem vários problemas como a separação de arquitetura do desenvolvedor que causam problemas na arquitetura
+- decisões que algumas vezes os arquitetos tomam, não funcionam. Decisões que os desenvolvedores tomam, dificilmente voltam para o arquiteto.
+- a solução é quebrar as barreiras entre eles e formar uma relação bidirecional 
+![](./assets/livro-fundamentos-arquitetura/cap-2-fazendo-arq-funcionar-2026-07-10_22-25.png)
+
+> não existe onde começa a arquitetura ou termina o design. Num projeto de software, sempre devem estar em sincronia.
+
+
+
+
+## Amplitude técnica
+- desenvolvedores devem ter _profundidade técnica_
+- arquitetos devem uma grande _amplitude técnica_
+![](./assets/livro-fundamentos-arquitetura/cap-2-piramide-conhecimento-2026-07-11_15-11.png)
+
+- o que você sabe, o que você não sabe e o que você não sabe que não sabe
+  a. o que você sabe: tecnologias, frameworks, liguagens de programação etc
+  b. o que você não sabe: o que tem pouco conhecimento, ou conhecimento superficial
+  c. o que você não sabe que não sabe: o conjunto das tecnologias e conhecimento que ele não sabe que existe e poderia resolver um problema
+  - **profundidade**: é o que você domina, é o que você se especializa e tem um grande conhecimento. É o topo da pirâmide abaixo:
+  ![](./assets/livro-fundamentos-arquitetura/cap2-2-piramide-desenvolvedor-2026-07-11_15-19.png)
+
+- Para um arquiteto é vantajoso saber que existem 3 soluções do que ser especialista em uma solução.
+![](./assets/livro-fundamentos-arquitetura/cap-2-piramide-arquiteto-2026-07-11_15-25.png)
+
+
+- arquitetos devem ter mais amplitude e menos aprofundamento
+![](./assets/livro-fundamentos-arquitetura/cap-2-amplitude-aprofundamento-arquiteto-2026-07-11_15-28.png)
+
+
+
+
+
+## Analisando os trade-offs
+- Pensar como arquiteto é identificar os trade-offs para determinar a melhor solução
+- Tudo na arquitetura é um trade-off que gera aquela famosa resposta: "DEPENDE"
+![](./assets/livro-fundamentos-arquitetura/cap-2-tradeoff-sistema-leilao-2026-07-11_15-49.png)
+
+Tópico:
+
+![](./assets/livro-fundamentos-arquitetura/cap-2-tradeoff-topico-2026-07-11_15-53.png)
+
+
+Fila:
+
+![](./assets/livro-fundamentos-arquitetura/cap-2-tradeoff-fila-2026-07-11_15-54.png)
+
+No tópico, a solução se conecta com uma conexão. Na fila se conecta com 3 conexões.
+
+trade-offs identificados entre as soluções:
+- segurança: no tópico "qualquer pessos pode acessar". Na fila, só pode ser acessado pelos consumidores
+- contrato homogêneos: no tópico, uma alteração afeta todos os consumidores. Na fila, somente o consumidor daquela fila sofre o impacto
+- monitoramenteo e escalabilidade: no tópico, é complexo o controle de monitoramento e escalonamento devido ao uso genérico para diversos consumidores. Na fila, através do AMQP, permite o moniotoramento e escalagem de forma independente
+
+> AMQP (Advanced Message Queuing Protocol)
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  Com base nas análises fundamentais que discutimos sobre as decisões de design, vamos estruturar o entendimento desse cenário clássico de mensageria: **Tópicos (Publish-Subscribe) vs. Filas (Point-to-Point)**.
+
+  ---
+
+  ## O Conceito em Linhas Gerais
+
+  Imagine que você quer dar um aviso para várias pessoas.
+
+  * **Abordagem de Tópico (Pub/Sub):** É como usar um alto-falante. Você fala uma vez só (publica) e qualquer um que estiver interessado pode sintonizar e ouvir (assinar). Se uma nova pessoa chegar, ela só precisa começar a escutar, sem que você precise falar diretamente com ela.
+  * **Abordagem de Fila (Ponto a Ponto):** É como enviar cartas individuais. Se você precisa avisar três serviços, você escreve e envia três cartas diferentes, postando uma em cada caixa postal (fila) específica.
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  Como arquitetos, não existe "solução perfeita", existem **trade-offs** (compensações). Vamos analisar o peso de cada escolha segundo os princípios do livro:
+
+  ### 1. Vantagens do Modelo de Tópicos
+
+  * **Extensibilidade Arquitetural:** Adicionar um novo serviço (como um histórico) é extremamente simples. O serviço produtor não precisa sofrer nenhuma modificação ou saber da existência do novo componente; o novo serviço apenas "assina" o tópico existente.
+  * **Desacoplamento:** O emissor da mensagem é completamente agnóstico em relação a quem consome as informações ou como elas são usadas.
+
+  ### 2. Desvantagens e Riscos do Modelo de Tópicos
+
+  * **Segurança e Controle de Acesso:** Como o canal é aberto para assinantes, torna-se mais fácil para um serviço não autorizado "grampear" o tópico e ler os dados. Nas filas, o canal é restrito e exclusivo entre o produtor e aquele consumidor específico.
+  * **Contratos Homogêneos:** Todos os consumidores do tópico precisam aceitar exatamente o mesmo formato de dados (o mesmo contrato). Se um novo serviço exigir um dado extra, o contrato de todos os outros serviços terá de mudar. Com filas individuais, cada canal pode ter seu próprio contrato customizado.
+  * **Monitoramento e Escalabilidade Dinâmica:** Protocolos como o AMQP permitem monitorar o volume de mensagens de cada fila de forma independente e escalar os consumidores sob demanda. Em tópicos genéricos, esse controle granular e o auto-dimensionamento (auto-scaling) se tornam bem mais complexos.
+
+  > **Frase de Impacto do Livro:** *"Os programadores conhecem os benefícios de tudo e os trade-offs de nada. Os arquitetos precisam entender ambos."* — Rich Hickey. A decisão final sempre dependerá de qual fator (extensibilidade ou segurança/contratos flexíveis) é a maior prioridade para o seu sistema atual.
+</details>
+
+
+
+
+## Entendendo as motivações comerciais
+- traduzir requisitos das motivações comerciais em características como escalabilidade, disponibilidade, desempenho etc.
+
+<details>
+  <summary>Explicação sobre o termo motivação comercial</summary>
+
+  No contexto da arquitetura de software, **motivação comercial** (ou *business driver*) refere-se aos objetivos estratégicos, metas financeiras e necessidades de negócio que uma empresa possui e que justificam a existência de um sistema.
+
+  Em termos simples: o software não existe para ser tecnologicamente elegante; ele existe para resolver um problema de negócio ou gerar valor para a empresa.
+
+  Abaixo, detalho como esse conceito funciona na prática:
+
+  ### 1. O que são essas Motivações Comerciais?
+
+  Elas partem do nível estratégico da empresa (os acionistas e diretores) e costumam responder a perguntas como:
+
+  * **"Qual é a meta da empresa?"** (Ex: "Queremos expandir nossa operação para mais três países este ano").
+  * **"Qual é o problema atual?"** (Ex: "Estamos perdendo vendas porque o sistema cai durante a Black Friday").
+  * **"Como a empresa monetiza?"** (Ex: "Nosso lucro vem de transações rápidas em alta escala").
+
+  ### 2. A Tradução: Negócio $\rightarrow$ Arquitetura
+
+  O papel do arquiteto é pegar essa meta comercial (que está em linguagem de negócios) e traduzi-la em requisitos técnicos (as características da arquitetura). Por exemplo:
+
+  | Motivação Comercial (Negócio) | Característica da Arquitetura (Técnico) |
+  | --- | --- |
+  | "Precisamos lançar novas funcionalidades toda semana para vencer a concorrência." | **Agilidade e Modulabilidade** (ex: arquitetura de microsserviços para deploys independentes). |
+  | "A empresa vai investir muito em marketing e esperamos o triplo de acessos no próximo mês." | **Escalabilidade** (o sistema precisa aguentar o aumento de carga sem travar). |
+  | "Somos um aplicativo de banco; se ficarmos fora do ar por 5 minutos, seremos multados pelo Banco Central." | **Disponibilidade e Tolerância a Falhas** (infraestrutura redundante para nunca cair). |
+  | "O usuário desiste da compra se a página demorar mais de 2 segundos para carregar." | **Desempenho/Performance** (uso de cache, otimização de consultas). |
+
+  ### Por que isso é desafiador?
+
+  Porque os recursos são limitados (tempo e dinheiro). Se o arquiteto tenta criar um sistema que é perfeitamente escalável, ultra seguro, disponível 100% do tempo e extremamente rápido, o projeto se torna financeiramente inviável ou demora anos para ser entregue.
+
+  Por isso, o arquiteto precisa colaborar de perto com os acionistas para entender quais motivações comerciais são as **reais prioridades** no momento, equilibrando os custos técnicos com o retorno financeiro que o sistema trará.
+</details>
+
+
+
+
+## Equilibrando arquitetura e codificação
+- armadilha do gargalo: ocorre quando um arquiteto assume a codificação no caminho crítico de um projeto
+- delegar o caminho crítico para a equipe de desenvolvimento e codificar funcionalidade de negócio que estão longe da parte crítica
+- nos casos que o arquiteto não consiga escrever código fonte, é possível criar provas de conceito (POC). Neste caso é importante gerar código de produção com qualidade e não deixar que esse código seja utilizado como referência e ser levado para produção. Essa prática ajuda a manter a prática contínua e com boas práticas de programação.
+- Outra oportunidade de códificação é resolver alguma história de deficits técnicos ou de arquitetura
+- Automação de processos e ferramentas é outra forma de manter o contato com o desenvolvimentos de software. Desenvolvendo CLI para alguma validação ou tarefa repetitiva.
+- Revisão é outra opção, além de não ser uma prática, ajuda a manter o contatos com as boas práticas e ajudar a identificar ponto de melhorias e indicar treinamentos para as equipes
+
+
+
+
+## Resumo
+- Arquitetura vs design: 
+  a. Arquitetura: identificar as características, selecionar os padrões e criar componentes
+  b. Design: criar diagrama de classes para cada componente, criar telas de interface, desenvolver e testar
+- Amplitude técnica: para um arquiteto ter um conhecimento amplo é preferencial em relação a um conhecimento profundo (ser especialista numa tecnologia). Conhecer uma quantidade maior de tecnologias para resolver um mesmo problemas ajuda a tomar as melhores decisões ao se basear nas característica de arquitetura de acordo com as decisões de negócio.
+- Analisando trade-offs:
+  a. exemplo de solução para consumer de informação usando tópico ou fila
+- Entendendo as motivações comerciais: Exemplo: uma empresa está perdendo vendas num marketplace porque o sistema está muito lento. Isso é uma necessidade de negócio que deve ser refletida a arquitetura para reduzir o tempo de resposta de reuiqsição da API
+- Equilibrando arquitetura e codificação: estar próximo do código, mesmo não desenvolvendo com a equipe de desenvolvedores, ajuda a manter a qualidade técnica e apoiar/identificar gargalos técnicos nas equipes
+
+
 
