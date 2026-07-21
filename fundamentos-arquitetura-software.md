@@ -578,3 +578,391 @@ trade-offs identificados entre as soluções:
 
 
 
+# Capítulo 3: modularidade
+> Noventa e cinco por cento das palavras [sobre arquitetura de software] são usadas enaltecendo os benefícios da “modularidade” e poucas, se algumas, tratam de como alcançá-la. — Glenford J. Myers (1978)
+- modularidade é um princípio organizacional
+
+
+
+
+## Definição
+- No dicionário a definição é: "cada conjunto de partes padronizadas ou unidades independentes que podem ser usadas para construir uma estrutura mais complexa"
+- Na linguagem de programação são usados:
+  a. classes
+  b. métodos/funções
+  c. pacotes/namespace
+  d. visibilidade e regras de escopos diferentes
+
+
+
+
+## Medindo a modularidade
+Pesquisadores criaram 3 conceitos principais:
+- coesão
+- acoplamento
+- conascência
+
+
+### Coesão
+- se diz coeso quando as parte de um módulo devem estar contidas num mesmo módulo
+> Tentar dividir um módulo coeso apenas resultaria em maior acoplamento e menor legibilidade. — Larry Constantine
+
+Medidas de coesão:
+- **coesão funcional**: uma parte está relacionada a outra parte, assim como o módulo tem tudo necessário para funcionar
+- **coesão sequêncial**: quando temos dois módulos e a saída de um, é a entrada de outro
+- **coesão comunicacional**: Exemplo prático: Um módulo que recebe os dados de uma compra, adiciona esse registro ao banco de dados e usa esses mesmos dados para gerar um e-mail de confirmação.
+- **coesão procedural**: dois módulo devem executar o código numa determinada ordem
+- **coesão temporal**: relacionado ao tempo, por exemplo, sistemas que precisam de algo na inicialização do sistema (configurar banco, carregar cache, carregar propriedades).
+- ** coesão lógica**: uma agrupamento de métodos numa classes que realizam funcionalidades diferentes e que não tem relação. No java são conhecidas como módulo/pacote chamado utils. Lembre-se daquela frase: "não sei onde coloco isso" e resposta é "coloque no pacote utils".
+- **coesão coincidental**: Os elementos estão no mesmo módulo por pura conveniência ou coincidência, sem qualquer relação lógica, temporal ou de dados. É o nível mais prejudicial para a manutenção do software.
+
+
+<details>
+    <summary>Sobre o trade-off sobre a separação de classes ou manter juntas</summary>
+
+    ### O Conceito em Linhas Gerais
+
+    Decidir o tamanho e a responsabilidade de um módulo não é uma ciência exata matemática. Na teoria, a alta coesão diz que devemos separar tudo o que faz coisas diferentes. Na prática, se separarmos *demais* (criando micromódulos para absolutamente tudo), corremos o risco de criar um problema oposto e igualmente grave: o **alto acoplamento**, onde os módulos ficam tão dependentes uns dos outros que não conseguem funcionar sozinhos.
+
+    ---
+
+    ### A Visão dos Autores (Richards & Ford)
+
+    No livro, enfatizamos que a coesão é uma métrica subjetiva, "menos precisa do que o acoplamento", e que a estrutura correta **"sempre depende"** de trade-offs (compensações).
+
+    Analisando o exemplo que você trouxe sobre a manutenção de clientes (`Customer Maintenance`) e pedidos (`Order Maintenance`), propomos três perguntas fundamentais que você, como arquiteto, deve se fazer para decidir se separa ou une esses comportamentos:
+
+    * **1. O escopo do módulo de pedidos é muito pequeno?**
+    Se as operações de obter e cancelar pedidos forem as únicas que existirão para sempre sobre "Pedidos", separá-las em um módulo `Order Maintenance` pode ser preciosismo. Talvez faça mais sentido mantê-las simplificadas dentro de `Customer Maintenance`.
+    * **2. Há potencial de crescimento desordenado?**
+    Se a tendência é que o módulo de clientes (`Customer Maintenance`) cresça muito no futuro com dezenas de novas funções, misturar regras de pedidos ali vai gerar uma bagunça difícil de manter. Nesse caso, a extração preventiva para um módulo próprio (`Order Maintenance`) é encorajada para preservar a coesão.
+    * **3. Qual é o nível de dependência de dados (Acoplamento)?**
+    Esta é a chave de ouro baseada na famosa citação de Larry Constantine (que diz que o acoplamento ideal é aquele que minimiza as conexões entre os módulos). Se para gerenciar pedidos o módulo `Order Maintenance` precisa consultar tantas regras internas e dados íntimos de `Customer` a ponto de os dois precisarem conversar freneticamente a cada segundo, separá-los criará um **acoplamento nocivo**. Se eles são altamente interdependentes, às vezes é melhor mantê-los juntos.
+</details>
+
+
+![](./assets/livro-fundamentos-arquitetura/cap-3-metrica-lcom-2026-07-14_19-13.png)
+
+_A imagem acima ilustra a métrica LCOM onde os campos são octagonos e os métodos são quadrados._
+
+
+A interpretação das classes da imagem é a seguinte:
+- classe X: boa coesa
+- classe Y: não tem coesão. Cada campo/método poderia ser uma classe separada porque não existe dependências entre um mesmo campo em diversas classes.
+- classe Z: coesão mista
+
+Classe utilitárias compartilhadas. 
+
+A LCOM tem deficiências, assim como em muitas métricas. É possível encontrar uma falta de coesão estrutural, mas não tem como determinar quando certas partes se encaixam entre si logicamente.
+Isso reflete:
+> Segunda Lei da Arquitetura de Software: preferir por que acima de como.
+
+
+
+
+### Acoplamento
+- acoplamento **aferente**: mede o número de conexões de entrada para um artefato do código (componente, classe, função etc.).
+- acoplamento **eferente**: mede as conexões de saída para outros artefatos do código.
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  É super normal achar esses termos confusos de início! Eles foram "emprestados" da biologia e da medicina (onde se fala de vasos sanguíneos e neurônios aferentes e eferentes) e aplicados à arquitetura de software por Robert C. Martin (o famoso "Uncle Bob").
+
+  Para nunca mais esquecer, pense na direção do fluxo. Vamos traduzir isso de forma simples:
+
+  ---
+
+  ## 🧠 A Analogia Biológica (Para fixar na mente)
+
+  * **Aferente (Entrada):** Os neurônios aferentes levam o estímulo sensorial da pele **para dentro** do cérebro.
+  * **Eferente (Saída):** Os neurônios eferentes levam a resposta do cérebro **para fora**, em direção aos músculos.
+
+  ---
+
+  ## 💻 No Desenvolvimento de Software
+
+  Quando falamos de acoplamento entre classes, pacotes ou componentes, a lógica é exatamente a mesma.
+
+  ### 1. Acoplamento Aferente ($C_a$ - Afferent Coupling)
+
+  Representa as dependências de **Entrada**. É a métrica que diz: **"Quantos componentes externos dependem de mim?"**
+
+  * **O que significa:** Se o seu módulo `Autenticacao` é usado por outros 10 módulos do sistema, ele tem um acoplamento aferente alto ($C_a = 10$).
+  * **Impacto:** Módulos com alto acoplamento aferente são **estáveis e responsáveis**. Como muita gente depende deles, você não pode alterá-los de qualquer jeito, ou vai quebrar o sistema inteiro. Eles devem ser muito bem testados e difíceis de mudar.
+
+  ### 2. Acoplamento Eferente ($C_e$ - Efferent Coupling)
+
+  Representa as dependências de **Saída**. É a métrica que diz: **"De quantos componentes externos eu dependo?"**
+
+  * **O que significa:** Se o seu módulo `GeradorDeRelatorios` precisa importar 8 bibliotecas ou outras classes diferentes para funcionar, ele tem um acoplamento eferente alto ($C_e = 8$).
+  * **Impacto:** Módulos com alto acoplamento eferente são **instáveis**. Se qualquer uma das 8 dependências mudar, o seu módulo corre um risco enorme de quebrar. Eles são altamente dependentes do mundo exterior.
+
+  ---
+
+  ## 📊 Tabela Comparativa
+
+  | Característica | Acoplamento Aferente ($C_a$) | Acoplamento Eferente ($C_e$) |
+  | --- | --- | --- |
+  | **Direção das setas** | Setas apontando **para** o seu módulo ($\rightarrow$ Módulo) | Setas saindo **do** seu módulo (Módulo $\rightarrow$) |
+  | **Pergunta-chave** | "Quem me usa?" | "Quem eu uso?" |
+  | **Foco** | Responsabilidade | Dependência |
+  | **Comportamento** | Tende a ser mais **estável** (difícil de mudar) | Tende a ser mais **instável** (sensível a mudanças externas) |
+
+  ---
+
+  ## 🛠️ Um Exemplo Prático em Código
+
+  Imagine a classe `ProcessadorDePagamentos`:
+
+  ```csharp
+  // Exemplo de alto acoplamento EFERENTE (Ce)
+  // Esta classe depende de TRÊS outras classes para funcionar.
+  public class ProcessadorDePagamentos {
+      private BancoDeDados _db;        // Dependência 1
+      private GatewayDeCartao _cartao; // Dependência 2
+      private ServicoDeEmail _email;   // Dependência 3
+
+      public void Processar() {
+          // ... usa as três dependências
+      }
+  }
+
+  ```
+
+  > O `ProcessadorDePagamentos` tem acoplamento eferente ($C_e$) igual a 3. Se o `ServicoDeEmail` mudar sua assinatura, o processador quebra.
+
+  Agora, imagine a classe `Log`:
+
+  ```csharp
+  // Exemplo de alto acoplamento AFERENTE (Ca)
+  // Esta classe não depende de ninguém, mas TODOS dependem dela.
+  public class Log {
+      public void Gravar(string mensagem) {
+          Console.WriteLine(mensagem);
+      }
+  }
+
+  ```
+
+  > Se o `ProcessadorDePagamentos`, o `CarrinhoDeCompras` e o `CadastroUsuario` utilizam a classe `Log`, ela tem um acoplamento aferente ($C_a$) de 3. Ela é altamente responsável; se você alterar o método `Gravar`, precisará ajustar esses três outros lugares.
+</details>
+
+
+
+
+### Abstração, Instabilidade e distância da sequência principal
+- acomplamento: uma parte do sistema depende de outra
+- abstração
+- instabilidade 
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  Entender as métricas de arquitetura de software pode parecer desafiador no início, mas elas se tornam simples quando usamos analogias do nosso dia a dia. Vamos desmistificar esses três conceitos fundamentais.
+
+  ---
+
+  ## O Conceito em Linhas Gerais
+
+  Imagine que estamos construindo uma cozinha de restaurante. Vamos entender os termos por meio dessa analogia:
+
+  * **Acoplamento (Dependência):** É o quanto uma parte do sistema precisa de outra para funcionar.
+  * *Analogia:* Se o cozinheiro só consegue preparar o prato usando exatamente a faca da marca *X*, o trabalho dele está fortemente **acoplado** a essa faca específica. Se a faca sumir, o trabalho para.
+
+
+  * **Instabilidade (Facilidade de Mudar):** É a probabilidade de um componente sofrer impacto ou precisar ser alterado.
+  * *Analogia:* Um garçom é **instável** (no bom sentido arquitetural) porque ele se adapta rapidamente: se o cardápio muda, ele apenas decora os novos pratos. Já a tubulação de gás da cozinha é extremamente **estável** (rígida): se você quiser mudar o fogão de lugar, terá um trabalho enorme para alterar os canos.
+
+
+  * **Abstração (Ideia vs. Prática):** É a separação entre *o que* deve ser feito e *como* isso é feito detalhadamente.
+  * *Analogia:* O cardápio é uma **abstração**. Ele diz "Filé com fritas". Você não precisa saber a marca do óleo ou a temperatura exata da fritadeira (isso é a **implementação concreta**). Você só precisa saber o conceito do prato.
+
+
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  No livro, nós abordamos essas métricas de forma matemática e matemática-visual para ajudar o arquiteto a avaliar a saúde e a flexibilidade do sistema.
+
+  ### 1. Acoplamento: Entradas e Saídas
+
+  Dividimos o acoplamento em duas direções para entender o fluxo de dependência de um componente (ou classe):
+
+  * **Acoplamento Aferente ($C^a$):** São as conexões que **chegam** ao componente. Ou seja, quantos outros componentes dependem dele.
+  * **Acoplamento Eferente ($C^e$):** São as conexões que **saem** do componente. Ou seja, de quantos outros componentes ele depende para funcionar.
+
+  ### 2. Instabilidade ($I$)
+
+  A instabilidade mede o quão fácil é alterar um componente sem causar um efeito dominó de erros. Ela é calculada pela fórmula:
+
+  $$I = \frac{C^e}{C^e + C^a}$$
+
+  * **Instabilidade Próxima de 1 (Máxima):** O componente depende de muitos outros ($C^e$ alto), mas ninguém depende dele ($C^a$ zero). Ele é muito fácil de mudar, pois qualquer alteração nele não quebra o restante do sistema.
+  * **Instabilidade Próxima de 0 (Mínima / Estável):** Muitos dependem dele, mas ele não depende de ninguém. Ele é difícil de mudar, pois qualquer alteração nele pode quebrar vários outros pontos do sistema.
+
+  ### 3. Abstração ($A$)
+
+  Mede a proporção de elementos abstratos (como interfaces e contratos que definem *o que* fazer) em relação aos elementos concretos (código real que executa a tarefa).
+
+  $$A = \frac{\sum m^a}{\sum m^c}$$
+
+  * **Se a abstração é 1:** O componente é puramente abstrato (só contém definições, nenhuma implementação prática).
+  * **Se a abstração é 0:** O componente é puramente concreto (código direto, sem interfaces).
+
+  > **A Regra de Ouro dos Autores:** > Componentes que são muito **estáveis** (difíceis de mudar) devem ser altamente **abstratos** (fáceis de estender por meio de contratos). Componentes que são muito **instáveis** (fáceis de mudar) podem ser totalmente **concretos**. O equilíbrio perfeito entre essas forças é o que chamamos de **Sequência Principal** da arquitetura.
+</details>
+
+
+
+
+### Distância da sequência principal
+- uma métrica derivada com base na instabilidade e na abstração
+- instabilidade: mede quando um componente não depende de ninguém para mudar. Mudança no componente não afeta outros componentes do sistema
+- abastração: mede a proporção de regras teóricas em relação ao código. Na programação seria a relação de uma classe abstrata e um classe concreta
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ## O Conceito em Linhas Gerais
+
+  * **Instabilidade ($I$):** Mede a facilidade ou a probabilidade de um componente mudar. Se um componente depende de muitas coisas e ninguém depende dele, ele é considerado **instável** (fácil de alterar, pois sua mudança não quebra o resto do sistema). Se todo mundo depende dele, ele é **estável** (difícil de alterar, pois qualquer modificação gera um efeito dominó).
+  * **Abstração ($A$):** Mede a proporção de regras teóricas (contratos e interfaces) em relação ao código prático (implementação detalhada). Um componente altamente **abstrato** apenas dita as regras do que deve ser feito, enquanto um componente **concreto** executa o trabalho bruto.
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  Nesta obra, avaliamos a saúde da arquitetura combinando essas duas métricas, que sempre resultam em valores entre $0$ e $1$:
+
+  * **O Equilíbrio Necessário:** Nós defendemos que a estabilidade e a abstração devem andar de forma inversamente proporcional. Isso é calculado pela fórmula da Distância da Sequência Principal:
+
+  $$D = \vert{}A + I - 1\vert{}$$
+
+
+  * **Componentes Estáveis devem ser Abstratos ($I = 0$ e $A = 1$):** Se um componente é muito difícil de ser alterado porque todo o sistema depende dele, ele precisa ser composto por interfaces abstratas. Assim, novas funcionalidades podem ser adicionadas estendendo essas interfaces, sem a necessidade de modificar o código original que já está consolidado.
+  * **Componentes Instáveis podem ser Concretos ($I = 1$ e $A = 0$):** Se ninguém depende daquele componente, ele é flexível e livre para sofrer modificações diretas na implementação prática a qualquer momento, sem risco de quebrar outras partes do software.
+</details>
+
+![](./assets/livro-fundamentos-arquitetura/cap-3-abstracao-instabilidade-2026-07-17_21-51.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-3-distancia-sequencia-principal-2026-07-17_22-14.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-3-zona-inutilidade-2026-07-17_22-15.png)
+
+
+
+
+### Conascência
+> Dois componentes são conascentes se uma mudança em um requer que o outro seja modificado para manter a correção geral do sistema. — Meilir Page-Jones
+
+Dois tipos de conascência: 
+- estática
+- dinâmica
+
+#### Conascência estática
+- é o acoplamento no nível de código-fonte
+  - Conascência de nome
+  - Conascência de tipo
+  - Conascência de significado ou Conascência de convenção
+  - Conascência de posição
+  - Conascência de algoritmo
+
+
+#### Conascência dinâmica
+- analisa a chamada durante a execução
+  - Conascência de execução
+  - Conascência de tempo
+  - Conascência de valores
+  - Conascência de identidade
+
+
+#### Propriedades da Conascência
+- a Conascência é uma ferramenta para arquitetos e desenvolvedores
+- algumas propriedades ajudam os desenvolvedores a usar com sabedoria
+
+**Força**  
+![](./assets/livro-fundamentos-arquitetura/cap-3-guia-refatoracao-2026-07-18_21-20.png)
+
+**Localização**  
+
+**Grau**  
+
+
+
+### Unificando as métricas de acoplamento e conascência
+
+![](./assets/livro-fundamentos-arquitetura/cap-3-unificando-acoplamento-conascencia-2026-07-19_10-36.png)
+
+
+#### Problemas com a conascência dos anos 1990
+<details>
+  <summary>Gerado por IA</summary>
+
+  ## O Conceito em Linhas Gerais
+  A **conascência** é um conceito que serve para medir o grau de dependência entre diferentes partes de um sistema. Se a alteração em um componente exigir que outro componente também seja modificado para manter a integridade do software, dizemos que eles estão em conascência.
+
+  No entanto, as definições tradicionais desse termo criadas na década de 1990 possuem limitações quando aplicadas ao cenário moderno de desenvolvimento. Elas costumam focar demais em detalhes minuciosos e de baixo nível do código (como a qualidade e a limpeza das linhas de programação), deixando de lado as grandes decisões estruturais que definem a arquitetura do sistema.
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  Em nossa obra, apontamos que as métricas tradicionais dos anos 1990 falham em dois pontos centrais para o arquiteto moderno:
+
+  * **Foco no Grau vs. Modo de Acoplamento:** As métricas antigas olham muito para o *grau* do acoplamento em nível de código. Nós, como arquitetutos, nos importamos mais com o **como** os módulos estão acoplados (a natureza dessa ligação), focando em decisões mais amplas do que na implementação detalhada.
+  * **Decisões de Arquitetura Distribuída:** A conascência tradicional não ajuda a resolver dilemas arquiteturais complexos e modernos, como escolher entre **comunicação síncrona ou assíncrona** em um ambiente de microsserviços.
+  * **A Regra dos Trade-offs:** Reafirmamos a Primeira Lei da Arquitetura de Software: *tudo é um trade-off* (uma escolha onde há perdas e ganhos). Avaliar o acoplamento hoje exige ponderar essas escolhas estruturais, e não apenas analisar linhas de código isoladas.
+</details>
+
+
+
+
+
+
+### De módulos a componentes
+- módulo: nome genérico para grupo de código
+- componente: é a materialização do módulo que você pode instalar, executrar ou conectar no seu sistema.
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ## O Conceito em Linhas Gerais
+
+  * **Módulo:** É uma forma genérica de organizar e agrupar códigos que possuem propósitos parecidos ou que trabalham juntos. Pense nele como as pastas do seu computador onde você guarda arquivos do mesmo assunto para não deixar tudo bagunçado.
+  * **Componente:** É a materialização física ou lógica desse grupo de códigos dentro de uma plataforma. Se o módulo é a ideia de organizar as coisas juntas, o componente é o bloco real de construção que você consegue instalar, executar ou conectar no seu sistema.
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  * **Terminologia Abrangente:** Em nossa obra, usamos o termo "módulo" como um conceito lógico para nos referirmos a um agrupamento de código afim.
+  * **Blocos de Construção Práticos:** Já os "componentes" são tratados por nós como os blocos reais e fundamentais que os arquitetos utilizam para desenhar a estrutura do software. A maioria das linguagens e ferramentas modernas oferece suporte para empacotar esses módulos na forma de componentes físicos.
+  * **O Desafio da Separação:** Embora o conceito de separar o código em partes menores exista desde o início da computação, nós destacamos que desenvolvedores e arquitetos ainda enfrentam muitas dificuldades práticas para definir bem os limites de cada componente e obter bons resultados de design.
+</details>
+
+
+
+
+## Resumo
+- Modularidade é como organizamos o nosso código. Na orientação é objetos é representada a partir de classes, métodos e propriedades.
+- Na nodularidade temos 3 conceitos:
+  - coesão
+  - acoplamento
+  - conascência
+- Coesão: se diz que um código é coeso quando as propriedades de uma classe na orientação a objetos utiliza todos os seus atributos na maioria dos métodos.
+- Acoplamento: se diz que um código é acoplado quando ele depende fortemente de outros componentes do sistema
+  - acomplamento eferente: o seu sistema não dependende de outros sistema. Os outros sistemas dependem do seu sistema.
+  - acomplamento aferente: o seu sistema depende de um ou mais sistemas externos. Qualquer alteração no sistema externo pode quebrar o seu sistema
+- Conascência: se diz que existe um componete conascente quando uma alteração em um componete afete um segundo componente. TEmos dois tipos:
+  - estática: código fonte
+  - dinâmica: o componente em execução. Código-fonte é execução
+- Módulo é o agrupamento de código
+- Componente é materialização de um módulo
+
+
+
+
+
+
