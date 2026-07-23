@@ -966,3 +966,83 @@ Dois tipos de conascência:
 
 
 
+# Capítulo 4: Definição das características da arquitetura
+Uma solução do software consiste nos requisitos do domínio e nas características da arquitetura
+
+![](./assets/livro-fundamentos-arquitetura/cap-4-caracteristicas-arquitetura-2026-07-20_21-37.png)
+
+- características da arquitetura
+- requisitos não funcionais: nomear algo como não funcional tem um impacto negativo. O termo foi criado pelo arquitetos para diferenciar para diferenciar as `características da arquitetura` dos `requisitos funcionais`
+- atributos de qualidade: os autores não gostam porque implica uma avaliação da qualidae posterior no lugar do design.
+- os critérios da arquitetura atende 3 critérios:
+  - especifica uma consideração de design fora do domínio
+  - influencia algum aspecto estrutural de design
+  - é essencial ou importante para o sucesso da aplicação
+
+![](./assets/livro-fundamentos-arquitetura/cap-4-recursos-diferenciais-caracteristica-arquitetura-2026-07-21_20-51.png)
+
+
+**Especifica uma consideração de design fora do domínio**  
+
+**Influencia algum aspecto estrutural de design**  
+
+**Essencial ou importante para o sucesso da aplicação**  
+
+
+Características podem ser subdivididas em:
+- implícitas: raramente aparcem nos requisitos, mas são ncessárias (disponibilidade, confiabilidade e segurança)
+- explícitas: aparcem nos documentos de requisitos ou em outras especificações
+
+
+## Características da arquitetura listadas (em parte)
+As características variam desde código de baixo nível como modularidade e vão até questões sofisticadas como escalabilidade e elaticidade.
+
+Os arquitetos separam essas características em grandes categorias como:
+
+
+### Características operacionais da arquitetura
+Envolvem:
+- desempenho
+- Escalabilidade
+- Elasticidade
+- disponibilidade 
+- confiabilidade 
+
+
+### Características estruturais da arquitetura
+Se preocupa com a estrutura do código:
+- qualidade de código 
+- boa modularidade 
+- acomplamento controlado entre os componentes
+- código legível
+
+
+### Características transversais da arquitetura
+- acessibilidade
+- armazenamento
+- autenticação
+- autorização 
+
+
+## Trade-offs e arquitetura menos pior
+> Nunca mire na melhor arquitetura, mas na arquitetura menos pior.
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ## O Conceito em Linhas Gerais
+
+  Na engenharia de software, **não existe solução perfeita**. Um **trade-off** (ou compensação) significa que para ganhar algo em uma ponta do sistema, você obrigatoriamente precisa sacrificar algo na outra.
+
+  Por isso, o objetivo de um arquiteto não é criar uma arquitetura "perfeita" ou "ideal", mas sim encontrar a **arquitetura menos pior**: aquela que aceita os compromissos necessários para resolver o problema de negócio atual com o menor impacto negativo possível.
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  * **Interconectividade de Características:** No livro, abordamos que cada característica arquitetural (como segurança, desempenho ou escalabilidade) exige esforço estrutural e afeta diretamente as outras. Aumentar a segurança, por exemplo, exige mais etapas de validação e criptografia, o que reduz o desempenho.
+  * **A Analogia do Helicóptero:** Pilotar um helicóptero exige ajustar vários controles simultaneamente: ao mexer em uma alavanca, você altera o equilíbrio de todas as outras. Projetar arquitetura funciona exatamente assim; cada escolha gera reações em todo o sistema.
+  * **O Perigo do Excesso de Escopo:** Tentar suportar todas as características possíveis resulta em uma arquitetura genérica e extremamente complexa que não resolve bem problema nenhum.
+  * **Arquitetura Iterativa:** Como é impossível acertar de primeira sem cometer erros ou prever o futuro, o segredo é criar uma estrutura flexível e evolutiva. Quanto mais fácil for alterar o design com o tempo, menor será a pressão de tomar a decisão "perfeita" no início.
+</details>
+
