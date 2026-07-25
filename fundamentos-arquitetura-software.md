@@ -1046,3 +1046,101 @@ Se preocupa com a estrutura do código:
   * **Arquitetura Iterativa:** Como é impossível acertar de primeira sem cometer erros ou prever o futuro, o segredo é criar uma estrutura flexível e evolutiva. Quanto mais fácil for alterar o design com o tempo, menor será a pressão de tomar a decisão "perfeita" no início.
 </details>
 
+
+
+
+
+
+
+# Capítulo 5: Identificando características da arquitetura
+- identificar a característica correta, requer que o arquiteto entenda do domínio do problema em colaboração com os stakeholders
+- arquiteto descobre as características da arquitetura pelo menos de três modos:
+  - extraindo das preocupações
+  - requisitos
+  - conhecimento implícito do domínio
+
+
+## Extraindo características da arquitetura das preocupações do domínio
+- entender o domínio permite traduzir as preocupações em "atributos" (caracteríticas)
+- ao colaborar com o stackholder é manter uma lista mínima de características. Manter um lista grande de características deixa o sistema genérico e aumenta a complexidade antes emso de lidar com os problemas do domínio
+- manter o design simples é melhor
+- no lugar de priorizar a lista das características, escolha as 3 mais importantes
+
+Tradução das preocupações de domínio nas características da arquitetura
+
+![](./assets/livro-fundamentos-arquitetura/cap-5-traducao-caracteristicas-dominio-2026-07-22_22-19.png)
+
+Agilidade é diferente de entregar rápido. Agilidade é:
+- agilidade
+- testabilidade
+- implementabilidade
+
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ## O Conceito em Linhas Gerais
+
+  Na arquitetura de software, a **agilidade verdadeira** e a **tradução de requisitos de negócio** vão muito além de simplesmente colocar uma funcionalidade no ar o mais rápido possível (*time-to-market*).
+
+  Ser ágil significa ter a capacidade de **responder a mudanças com segurança**. Para que um sistema seja genuinamente ágil e atenda ao negócio, a arquitetura precisa equilibrar múltiplos fatores operacionais e estruturais, e não apenas focar na velocidade primária da entrega ou do processamento.
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  * **A Equação da Agilidade:** Agilidade não se resume ao tempo de lançamento no mercado. Ela é a soma de **agilidade + testabilidade + implementabilidade**. Se um código é rápido de escrever, mas difícil de testar ou implantar em produção, o sistema não é ágil.
+  * **A Armadilha do Requisito Único:** Ao ouvir uma necessidade do negócio (como "precisamos processar estes dados rapidamente até o fim do dia"), um erro comum é focar apenas em **desempenho**.
+  * **O Conjunto de Características Interligadas:** Para que uma necessidade de negócio seja realmente atendida, o arquiteto precisa analisar o cenário completo:
+  * **Disponibilidade:** O sistema precisa estar no ar quando o processamento for necessário.
+  * **Escalabilidade:** Deve suportar o aumento do volume de dados conforme o negócio cresce.
+  * **Confiabilidade:** O sistema não pode falhar no meio da execução.
+  * **Recuperabilidade:** Se houver uma interrupção, o sistema deve retomar exatamente de onde parou sem perder o progresso.
+  * **Auditabilidade e Correção:** O resultado precisa ser verídico e passível de verificação.
+</details>
+
+
+## Extraindo Características da Arquitetura dos Requisitos
+- algumas características são explícitas nos documentos de requisitos:
+  - quantidade de usuários
+  - escala
+- outras do conhecimento do domínio:
+  - num sistema acadêmico, tem-se conhecimento que os alunos deixam para realizar as operações no sistema em cima da data final. Com isso sabemos que é possível surgir algum pico de acesso nesses períodos e a escalabilidade seria uma das características
+
+
+## Estudo de caso: Silicon Sandwiches
+
+
+## Características explícitas
+- aparecem em um especificação de requisitos
+- requisito: "quantidade de usuários: atualmente milhares, talvez um dia, milhões". Neste caso pensamos em escalabilidade mesmo que não esteja implícito. Também é possível precisar de elasticidade, normalmente estão juntas.
+
+![](./assets/livro-fundamentos-arquitetura/cap-5-escalabilidade-usuarios-simultaneos-2026-07-23_21-12.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-5-sistema-elastico-pico-usuario-2026-07-23_21-15.png)
+
+- A terceira característica da arquitetura da qual obtemos os requisitos anteriores é o desempenho: ninguém quer comprar em uma loja de sanduíches com um desempenho ruim, sobretudo nas horas de pico.
+
+
+
+## Características implícitas
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ## O Conceito em Linhas Gerais
+
+  As **características implícitas** da arquitetura (também conhecidas como requisitos não funcionais) são aquelas expectativas sobre o funcionamento do sistema que raramente aparecem escritas nos documentos de requisitos entregues pelo cliente ou área de negócio.
+
+  O cliente dificilmente solicitará de forma explícita que *"o sistema não deve cair"* ou *"as senhas devem ser criptografadas"*. No entanto, se o sistema falhar nesses pontos, o negócio será prejudicado. Cabe ao arquiteto identificar e tratar essas necessidades subentendidas.
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  * **Disponibilidade e Confiabilidade:** Enquanto a disponibilidade garante que o usuário consiga acessar a aplicação, a confiabilidade assegura que o sistema permaneça funcional durante toda a interação do usuário, sem travamentos ou desconexões inesperadas.
+  * **Níveis de Segurança:** Toda aplicação exige segurança básica de código. Contudo, ela só se torna uma característica arquitetural (que exige mudanças de infraestrutura ou design estrutural) quando é crítica para o negócio ou envolve regulamentações severas.
+  * **O Risco da Especificação Excessiva:** Tentar abraçar todas as características implícitas possíveis complica o design do sistema e gera custos desnecessários. Especificar demais é tão prejudicial quanto especificar de menos.
+  * **Arquitetura e Custos:** Escolhas arquiteturais envolvem *trade-offs* contínuos. Como Mark Richards destaca: *"Não existem respostas erradas na arquitetura, apenas as caras"*. Cada decisão tem um preço em complexidade, tempo de desenvolvimento e recursos humanos.
+</details>
+
