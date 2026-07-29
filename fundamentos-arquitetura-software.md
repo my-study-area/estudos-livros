@@ -3,6 +3,10 @@ Escrito por Mark Richards e Neal Ford
 
 - Material complementar: https://fundamentalsofsoftwarearchitecture.com/
 
+https://www.youtube.com/@markrichards5014
+
+
+
 # Capítulo 1 : Introdução
 Citação de Martin Fowler sobre a definição da profissão de arquiteto de software:
 > Arquitetura é sobre algo importante… seja lá o que for. — Ralph Johnson
@@ -1143,4 +1147,174 @@ Agilidade é diferente de entregar rápido. Agilidade é:
   * **O Risco da Especificação Excessiva:** Tentar abraçar todas as características implícitas possíveis complica o design do sistema e gera custos desnecessários. Especificar demais é tão prejudicial quanto especificar de menos.
   * **Arquitetura e Custos:** Escolhas arquiteturais envolvem *trade-offs* contínuos. Como Mark Richards destaca: *"Não existem respostas erradas na arquitetura, apenas as caras"*. Cada decisão tem um preço em complexidade, tempo de desenvolvimento e recursos humanos.
 </details>
+
+
+
+
+
+
+
+
+# Capítulo 6: Medindo e controlando as características da arquitetura
+- aspectos operacionais: desempenho, elasticidade e escalabilidade
+- preocupações estruturais: modularidade e implementabilidade
+
+
+## Medindo as características da arquitetura
+Problemas na definição da arquitetura nas organizações: 
+- elas não são físicas: muitas características tem significado vago como agilidade e implementabilidade
+- definições muito variadas: diversos setores podem discordar das definições como desempenho. É necessário que os envolvidos se unam para declarar uma definição em comum.
+- complexas demais: características compõe muitas outras. A agilidade pode ser dividida em modularidade, implementabilidade e testabilidade.
+
+
+## Medidas operacionais
+- algumas características da arquitetura têm medidas óbvias como desempenho e escalabilidade
+- medir tempo médio de respostas das requisições sem considerar que 1% dessas respostas possam ter um tempo 10 vezes maior que a média pode não ser interessante
+- medir os tempos máximos como atípicos é uma outra opção
+- medir o tempo ideal de uma página estar visível para um usuário antes que ele desista de permanecer na página, pode ser definir com um tempo mínimo de 500ms para não perder usuários
+- calcular uma quantidade de bytes disponível para download num trafego de uma rede em dado momento para evitar problemas com latência
+- existem casos que não definem valores fixos, mas sim com base numa analise estátistica com base do passar dos meses e tentar identificar as mudanças que fogem do padrão para criar alarmes e métricas. A falha pode ser: algo incorreto ou alguma falha.
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ## O Conceito em Linhas Gerais
+
+  As **medidas operacionais** servem para quantificar e monitorar como o sistema se comporta na prática em termos de desempenho, escalabilidade e disponibilidade.
+
+  Em vez de adivinhar ou usar metas arbitrárias (como "o sistema precisa ser rápido"), a engenharia moderna utiliza dados e análises estatísticas contínuas para acompanhar o comportamento real da aplicação ao longo do tempo.
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  * **Uso de Análise Estatística:** Equipes maduras não definem metas exatas ao acaso. Elas constroem **modelos estatísticos** baseados no histórico para entender o comportamento esperado do sistema e disparar alertas quando algo foge desse padrão.
+  * **Aprendizado com Desvios:** Quando uma métrica sai do modelo previsto, isso revela um de dois aprendizados valiosos: ou a previsão/modelo estava incorreta, ou há um problema real no sistema que precisa ser corrigido.
+  * **Evolução das Métricas:** O que medimos evolui junto com a tecnologia e os dispositivos. Hoje, as equipes utilizam "orçamentos de desempenho" (performance budgets) focando em métricas de experiência do usuário (como tempo para exibição do primeiro conteúdo ou inatividade da CPU).
+</details>
+
+
+## Medidas estruturais
+- algumas ferramentas ajudam os arquitetos lidem com a estrutura de código como a complexidade ciclomática.
+- Complexidade ciclomática: é uma métrica com base no código-fonte no nível de método da classe/aplicação:
+  + Se um método não utiliza **if**, então o seu peso seria 1. `CC=1`
+  + Se um método utiliza **if**, então o seu peso seria 2. `CC=2`
+
+Fórmula de calculo:
+```
+CC = E-N+2
+```
+Onde:
+- `CC`: complexidade ciclomática
+- `E`: representa as extremidades (possíveis decisões)
+- `N`: representa os nós (linha de código)
+
+![](./assets/livro-fundamentos-arquitetura/cap-6-exemplo-calculo-cc-complexidade-ciclomatica-2026-07-25_12-07.png)
+
+- complexidade de código prejudica a modularidade, implementabilidade etc
+- **Crap4J**: ferramenta de métrica em Java que tentar determinar código ruim
+> O uso do TDD ajuda a criar código melhor e menos complexo
+
+
+## Medidas do processo
+- algumas características da arquitetura como a **agilidade** costuma cruzar com o processo de desenvolvimento de software. A agilidade pode ser dividida em testabilidade e implementabilidade.
+- os testes podem ser medidos por seu percentual de cobertura
+- a implementabilidade pode ser medida pela quantidade de implementabilidade com sucesso em relação a implementabilidade com erro (implantação).
+
+
+
+## Governança e funcões de aptidão
+- como garantir que os desenvolvedores irão respeitar as características da arqitetura?
+- a modularidade é um exemplo de característica importante, mas não é urgente
+- os arquivos precisam de um mecanismo de governança
+
+
+## Governando as características da arquitetura
+- a governança da arquitetura alcança qualquer aspecto do processo do desenvolvimento de software
+- a XP Extreme trouxe a automação no processo da integração contínua (CI) apra auxiliar no processo de governança da arquitetura
+
+
+## Funções de aptidão
+- função de aptidão da arquitetura: "Qualquer mecanismo que fornece uma avaliação objetiva da integridade de alguma característica da arquitetura ou uma combinação delas"
+
+![](./assets/livro-fundamentos-arquitetura/cap-6-mecanismos-funcoes-aptidao-2026-07-27_21-48.png)
+
+
+### Dependências cíclicas
+![](./assets/livro-fundamentos-arquitetura/cap-6-dependencia-ciclica-componentes-2026-07-27_21-53.png)
+
+Função de aptidão para detectar os ciclos do componente:
+```java
+public class CycleTest {
+    private JDepend jdepend;
+
+    @BeforeEach
+    void init() {
+        jdepend = new JDepend();
+        jdepend.addDirectory("/path/to/project/persistence/classes");
+        jdepend.addDirectory("/path/to/project/web/classes");
+        jdepend.addDirectory("/path/to/project/thirdpartyjars");
+    }
+
+    @Test
+    void testAllPackages() {
+        Collection packages = jdepend.analyze();
+        assertEquals("Cycles exist", false, jdepend.containsCycles());
+    }
+}
+```
+- ferramenta JDepend em java para medir as dependências entre pacotes de um projeto: https://github.com/clarkware/jdepend
+
+
+
+
+### Distância da função de aptidão da sequência principal
+Trecho de código utilizando JDepend para estabelecer um limite para valores aceitáveis
+```java
+@Test
+void AllPackages() {
+    double ideal = 0.0;
+    double tolerance = 0.5; // depende do projeto
+    Collection packages = jdepend.analyze();
+    Iterator iter = packages.iterator();
+    while (iter.hasNext()) {
+        JavaPackage p = (JavaPackage)iter.next();
+        assertEquals("Distance exceeded: " + p.getName(),
+            ideal, p.distance(), tolerance);
+    }
+}
+```
+- ArchUnit é uma biblioteca java para verificar a arquitetura, em especial a modularidade de um projeto, por exemplo, verificando que o projeto segue a arquitetura em camadas:  https://www.archunit.org/ 
+
+![](./assets/livro-fundamentos-arquitetura/cap-6-arquitetura-camadas-2026-07-28_21-24.png)
+
+Exemplo de uso:
+```java
+layeredArchitecture()
+    .layer("Controller").definedBy("..controller..")
+    .layer("Service").definedBy("..service..")
+    .layer("Persistence").definedBy("..persistence..")
+
+    .whereLayer("Controller").mayNotBeAccessedByAnyLayer()
+    .whereLayer("Service").mayOnlyBeAccessedByLayers("Controller")
+    .whereLayer("Persistence").mayOnlyBeAccessedByLayers("Service")
+```
+
+No mundo .NET temos algo semelhante: https://github.com/BenMorris/NetArchTest
+```c#
+// As classes na apresentação não devem referenciar diretamente os repositórios
+var result = Types.InCurrentDomain()
+    .That()
+    .ResideInNamespace("NetArchTest.SampleLibrary.Presentation")
+    .ShouldNot()
+    .HaveDependencyOn("NetArchTest.SampleLibrary.Data")
+    .GetResult()
+    .IsSuccessful;
+```
+
+Outros exemplos de funçoes de aptidão:
+- Chaos Monkey da Netflix
+- Simian Army
+
+
 
