@@ -1318,3 +1318,129 @@ Outros exemplos de funçoes de aptidão:
 
 
 
+
+
+# Capítulo 7: Escopo das características da arquitetura
+> A axiomática é o conjunto de axiomas (premissas, verdades aceitas sem demonstração por serem consideradas evidentes ou como ponto de partida lógico) que fundamenta uma teoria, sistema ou modelo de pensamento. No sentido amplo, significa uma abordagem baseada em princípios ou postulados fundamentais que não costumam ser questionados dentro daquele contexto.
+
+- quando se fala em escalabilidade, em geral, expressam isso em torno do sistema inteiro. Isso era verdades umas décadas atrás, antes do surgindo de técnicas modernas como microsserviços
+- foi falado sobre "medidas estruturais no capítulo 6, contudo o foco das métrricas somente revelam detalhes de baixo nível no código. Não avaliam componentes dependentes como bancos de dados
+- para avaliar características da arquitetura operacional, dve-se considerar componentes externos ao código fonte. Assim surgiu o termo "quantum da arquitetura" relacionado a métrica conascência.
+
+
+## Acoplamento e conascência
+> Conascência: Dois componentes são conascentes se uma mudança em um requer que o outro seja modificado para manter a correção geral do sistema
+
+De acordo com o autor do livro "What every programmer should know about oriented design" os tipos de Conascência foram definidos como: estática, via código estático; dinâmico, referente ao comportamento em tempo de execução
+
+Para conascência dinâmica, defiram 2 tipos: síncrona e assíncrona. Nas chamadas síncrona, o serviço que chama aguarda a resposta. Já nas chamada assíncronas, é diferente, o serviço "dispara e esquece", comum nas arquiteturas baseadas em eventos.
+
+
+## Quanta arquitetural e granularidade
+### Quantum da Arquitetura
+Um artefato implantado de modo independente com alta coesão funcional e conascência síncrona
+
+### Implantado de modo independenteArquitetura
+Um quantum da arquitetura inclui todos os componentes necessários para funcionar independentemente das outras partes da arquitetura.
+
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  Aqui está a explicação sobre **Quanta Arquitetural** (ou *Architectural Quantum*):
+
+  ---
+
+  ## O Conceito em Linhas Gerais
+
+  Pense em um **quantum de arquitetura** (o plural é *quanta*) como o **menor pedaço independente de um sistema** que consegue funcionar sozinho de ponta a ponta.
+
+  Se o seu sistema fosse uma cidade, um quantum seria um bairro autossuficiente: ele tem suas próprias casas, sua própria rede de água e sua própria usina de energia. Ele não depende de outros bairros para continuar funcionando no dia a dia.
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  Mark Richards e Neal Ford definem o **quantum da arquitetura** como uma unidade que combina três pilares fundamentais:
+
+  * **Implantação Independente (*Independently Deployable*):** É uma parte do sistema que possui todos os componentes necessários (código, banco de dados, serviços) para rodar e ser implantada sem precisar que o restante do sistema seja atualizado ou implantado junto.
+  * **Alta Coesão Funcional (*High Functional Cohesion*):** Todas as partes dentro desse quantum trabalham juntas para realizar um objetivo de negócio bem definido e unificado (por exemplo, gerenciar os pagamentos).
+  * **Conascência Síncrona (*Synchronous Conascence*):** Refere-se à dependência em tempo real entre as partes internas desse quantum. Se um componente precisa conversar com outro de forma síncrona (esperando uma resposta imediata) para completar uma operação, ambos fazem parte do mesmo quantum.
+
+  ---
+
+  A identificação dos *quanta* é essencial para determinar o tamanho correto das partes do seu sistema (a granularidade) e definir se você está lidando com um monólito (um único quantum gigante) ou microsserviços (múltiplos quanta menores e independentes).
+</details>
+
+### Alta coesão funcional
+
+### Conascência síncrona
+
+![](./assets/livro-fundamentos-arquitetura/cap-7-conascencia-quantum-2026-07-29_21-43.png)
+
+
+
+
+## Estudo de caso: going, going, gone
+
+
+## Resumo
+<details>
+  <summary>Gerado por IA</summary>
+
+  Olá! Sou a sua inteligência especializada no livro **"Fundamentos de Arquitetura de Software: Uma Abordagem de Engenharia"**, de Mark Richards e Neal Ford. Estou aqui para guiar você nessa jornada de aprendizado sobre arquitetura de software!
+
+  Com base no seu resumo do **Capítulo 7: Escopo das características da arquitetura**, estruturei a explicação detalhada do capítulo seguindo o nosso padrão.
+
+  ---
+
+  ### O Conceito em Linhas Gerais
+
+  Antigamente, quando pensávamos em características da arquitetura (como escalabilidade, disponibilidade ou segurança), costumávamos aplicá-las ao sistema como um todo. Se o sistema precisava ser escalável, assumia-se que *tudo* nele precisava escalar da mesma forma.
+
+  No entanto, com a evolução da engenharia e a chegada de estilos como microsserviços, percebeu-se que diferentes partes de um mesmo sistema têm necessidades completamente diferentes. O **Capítulo 7** trata justamente de **delimitar onde começam e onde terminam essas características**, introduzindo o conceito de **Quantum da Arquitetura** (*Architectural Quantum*) para medir o escopo real de uma arquitetura, indo além do código-fonte e incluindo banco de dados e dependências de tempo de execução.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Os autores abordam esse tema conectando o conceito de acoplamento ao escopo de implantação e operação do sistema. A explicação se divide nos seguintes pilares:
+
+  ---
+
+  #### 1. Limitações das Métricas Estruturais Tradicionais
+
+  * **Código vs. Sistema:** Métricas puramente de código (vistas no Capítulo 6) medem detalhes de baixo nível, mas ignoram dependências externas cruciais, como bancos de dados ou serviços de terceiros.
+  * **Necessidade Operacional:** Para avaliar características operacionais (como *performance* e escalabilidade), é preciso analisar o ecossistema completo onde o código roda.
+
+  ---
+
+  #### 2. Acoplamento e Conascência
+
+  * **O que é Conascência:** Dois componentes são conascentes se uma mudança em um exige a alteração no outro para manter a integridade do sistema.
+  * **Conascência Estática:** Refere-se à estrutura do código (dependências de compilação, tipos de dados, parâmetros).
+  * **Conascência Dinâmica:** Refere-se à execução em tempo de execução:
+  * **Síncrona:** A chamada bloqueia a execução enquanto aguarda a resposta. Isso unifica o comportamento operacional e conecta o destino ao mesmo destino de falha/escalabilidade do chamador.
+  * **Assíncrona:** Modelo "dispara e esquece" (*fire-and-forget*), comum em arquiteturas baseadas em eventos, que reduz o acoplamento temporal entre os serviços.
+
+
+
+  ---
+
+  #### 3. Quantum da Arquitetura (*Architectural Quantum*)
+
+  Um *quantum* é a menor unidade autônoma da arquitetura. Ele é definido pela união de três elementos centrais:
+
+  * **Implantado de modo independente (*Independently Deployable*):** Inclui tudo o que é necessário para rodar de ponta a ponta (código, interface, banco de dados e dependências) sem depender da implantação simultânea de outros componentes.
+  * **Alta coesão funcional:** Todo o código dentro do quantum trabalha focado em um único propósito de negócio bem delimitado.
+  * **Conascência síncrona:** Se duas partes se comunicam de forma síncrona em tempo de execução, elas compartilham a mesma disponibilidade e escalabilidade — logo, fazem parte do mesmo quantum.
+
+  ---
+
+  #### 4. Estudo de Caso: *Going, Going, Gone*
+
+  * Os autores usam o exemplo fictício de um site de leilões (*Going, Going, Gone*) para demonstrar a aplicação prática do conceito.
+  * **Diferenciação de Quanta:** A parte de navegação de itens leiloados exige altíssima escalabilidade de leitura e pode tolerar consistência eventual. Já o módulo de lances (*bidding*) exige altíssima consistência e baixa latência de escrita.
+  * **Conclusão Prática:** Tratar o sistema como um único quantum exigiria aplicar os requisitos mais rígidos a todo o sistema, tornando-o caro e complexo. Ao dividir o sistema em múltiplos *quanta* de arquitetura, cada parte recebe exatamente as características de que precisa.
+</details>
+
