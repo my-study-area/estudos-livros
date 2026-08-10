@@ -1444,3 +1444,336 @@ Um quantum da arquitetura inclui todos os componentes necessários para funciona
   * **Conclusão Prática:** Tratar o sistema como um único quantum exigiria aplicar os requisitos mais rígidos a todo o sistema, tornando-o caro e complexo. Ao dividir o sistema em múltiplos *quanta* de arquitetura, cada parte recebe exatamente as características de que precisa.
 </details>
 
+
+
+
+
+# Capítulo 8: Pensamento baseado em componentes
+- em geral os arquitetos pensam em termos de **componentes**, ao pensar em uma representação física de um módulo
+- desenvolvedores empacotam os módulos de formas diferentes ao gerar o pacote físico do módulo:
+  - arquivos jar em Java
+  - dll em .NET
+  - gem em Ruby
+
+
+## Escopo do componente
+- wrapper de código: bibliotecas
+- camada ou subsistema: camadas como domínio, apresentação etc
+- processador de evento
+- serviço distribuído: microsserviços
+
+![](./assets/livro-fundamentos-arquitetura/cap-8-variedade-componentes-2026-07-30_21-49.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-8-microsservicos-componenes-nao-necessarios-2026-07-30_21-51.png)
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  Componentes são os **blocos de construção fundamentais de um sistema**. Eles funcionam como contêineres organizacionais para agrupar partes do código (como classes e funções) em unidades maiores, facilitando a estruturação e a manutenção do software.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Os autores apresentam os componentes como o nível de modularidade que fica logo acima do código básico oferecido pelas linguagens de programação. As principais abordagens incluem:
+
+  * **Wrappers de Código Afim (Bibliotecas):** O tipo mais simples de componente. Agrupa funções ou classes relacionadas que rodam no mesmo endereço de memória e se comunicam diretamente pelo código. Costumam ser dependências compiladas junto com o sistema.
+  * **Camadas e Subsistemas:** Estruturas que agrupam componentes em níveis de abstração (como camada de dados, regras de negócio e apresentação) para dividir as responsabilidades da aplicação.
+  * **Processadores de Eventos:** Componentes projetados para redefinir a execução de tarefas com base na chegada de eventos assíncronos.
+  * **Serviços Distribuídos:** Unidades independentes que rodam em seus próprios espaços de memória e se comunicam por rede (via protocolos como REST ou filas de mensagens). Essa abordagem é o pilar de arquiteturas como a de microsserviços.
+  * **Decisão Arquitetural:** O uso e o nível de granularidade dos componentes não são obrigatórios, mas sim escolhas do arquiteto para determinar como o sistema será particionado em alto nível.
+</details>
+
+
+## Função do arquiteto
+- o arquiteto define, aprimora, gerencia e controla os componentes em uma arquitetura
+- em colaboração com analistas comerciais, especialistas, desenvolvedores, engenheiros de QA, profissionais de operações e arquitetos corporativos, criam o design inicial do software, incorpora as características
+- a arquitetura existe separada do processo
+- em geral, o nível mais baixo do sistema que o arquiteto interage é o componente, com exceção das métricas de qualidade do capítulo 6
+- o arquiteto deve saber identificar os componetes do projeto, mas antes disso deve saber como particionar
+
+
+## Particionamento da arquitetura
+- considere os dois tipos de estilos de arquitetura: em camadas e modular
+
+![](./assets/livro-fundamentos-arquitetura/cap-8-particionamento-camadas-modular-2026-07-31_21-14.png)
+
+- monolítico em camadas
+- monolítico modular
+
+Particionamento de alto nível (monolítico em camadas):
+- particionamento técnico: apresentação, regras comerciais, serviço, persistência
+- particionamento do domínio: FecharCatálogo, EnviarParaCliente, Análise, AtualizarInvestário, Relatório, AtualizarContas
+
+![](./assets/livro-fundamentos-arquitetura/cap-8-tipos-particionamento-alto-nivel-2026-07-31_21-26.png)
+
+> Lei de Conway: "As organizações que projetam sistemas… ficam limitadas a produzir designs que são cópias das estruturas de comunicação dessas organizações."
+> Resumindo: o design da arquitetura é um espelho da estrutura organizacional da empresa.
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ## O Conceito em Linhas Gerais
+
+  A **Lei de Conway** é uma observação sociotécnica que diz o seguinte: **a forma como o software é desenhado reflete a forma como a equipe que o criou se comunica**.
+
+  * Se você tem três times isolados (um de Front-end, um de Back-end e um de Banco de Dados), o seu sistema tenderá a ter três grandes camadas separadas.
+  * Se a comunicação entre as pessoas for truncada, a integração entre as partes do código também será problemática.
+
+  Resumindo: o design da arquitetura é um espelho da estrutura organizacional da empresa.
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  Mark Richards e Neal Ford destacam que os arquitetos de software precisam entender que **fatores humanos e organizacionais impactam diretamente as decisões técnicas**.
+
+  * **Acoplamento Organizacional:** Separar times puramente por "especialidade técnica" (DBAs de um lado, devs de outro) cria barreiras de comunicação. Isso força o software a ser construído em silos, dificultando a entrega de funcionalidades completas de ponta a ponta.
+  * **A Manobra Inversa de Conway (*Inverse Conway Maneuver*):** Para evitar que a estrutura antiga da empresa estrague a arquitetura desejada, os autores defendem que devemos usar a lei a nosso favor. Ou seja: **mude a estrutura dos times para encorajar a arquitetura que você quer ter**.
+  * **Times Multidisciplinares:** Em vez de separar por tecnologia, organiza-se a equipe ao redor do domínio do negócio (por exemplo, um time focado só em "Pagamentos", contendo dev front, dev back e especialista em dados). Isso naturalmente gera uma arquitetura de microsserviços ou módulos independentes.
+</details>
+
+- particionamento de domínio: inspirado no DDD de Eric Evan
+- componentes do sistema organizados por capactidade técnicas: apresentação, regras comerciais, persistência etc.
+
+![](./assets/livro-fundamentos-arquitetura/cap-8-particionamento-tecnico-dominio-2026-08-01_21-43.png)
+
+Na figura acima, o particionamento técnico, FecharCatálogo aparece em todas as camadas. No particionamento de domínio, pode conter domínios camadas, mas foca nos domínos.
+
+
+
+## Estudo de Caso: Silicon Sandwiches: Particionamento
+Exemplo de particionamento de domínio:  
+![](./assets/livro-fundamentos-arquitetura/cap-8-particionamento-dominio-silicon-sandwiches-2026-08-01_21-52.png)
+
+No exemplo acima o arquiteto particionou em torno de domínios e em cada componente reside um subcomponente conrindo avariação comum (common) e local.
+
+Outra abordagem é isolar as partes common e local em sua própria partição:  
+
+![](./assets/livro-fundamentos-arquitetura/cap-8-particionado-tecnicamente-silicon-sandwiches-2026-08-02_10-35.png)
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ## O Conceito em Linhas Gerais
+
+  O **particionamento de arquitetura** é o ato de decidir como você vai organizar e dividir os principais blocos de construção do seu sistema.
+
+  Pense nisso como organizar uma casa: você pode dividir os ambientes por **função do dia a dia** (quarto, cozinha, banheiro) ou por **tipo de infraestrutura/técnica** (instalação hidráulica, rede elétrica, alvenaria).
+
+  No software, as duas formas principais de fazer essa divisão de alto nível são:
+
+  * **Particionamento por Domínio:** Organiza o sistema com base nas regras e fluxos de negócio.
+  * **Particionamento Técnico:** Organiza o sistema com base nas camadas de tecnologia ou capacidades técnicas compartilhadas.
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  No livro, enfatizamos que **não existe uma escolha "certa", mas sim compensações (*trade-offs*)**. O famoso *"depende"* da engenharia de software entra em ação aqui.
+
+  ### 1. Particionamento por Domínio
+
+  * **Como funciona:** As partes do sistema são divididas por áreas de negócio ou fluxos de trabalho (ex: Compras, Entrega, Inventário, Promoção).
+  * **Vantagens:**
+  * Facilita a modelagem alinhada com o negócio (próximo do *Domain-Driven Design*).
+  * Simplifica a migração para arquiteturas distribuídas (como microsserviços) no futuro.
+  * Mudanças em uma regra de negócio afetam apenas o componente daquela área.
+
+
+  * **Desvantagens:** Pode haver duplicação de esforço técnico ou padrão de código entre diferentes módulos de domínio.
+
+  ---
+
+  ### 2. Particionamento Técnico
+
+  * **Como funciona:** O sistema separa primeiro as capacidades ou camadas técnicas de alto nível (ex: módulos globais/comuns vs. customizações locais), e o negócio roda por cima dessa infraestrutura.
+  * **Vantagens:**
+  * Maior reutilização de código e centralização de aspectos técnicos.
+  * Facilita a consolidação de padrões operacionais em um só lugar.
+
+
+  * **Desvantagens:**
+  * Alto acoplamento: alterar uma regra de negócio pode exigir mexer em múltiplos pontos técnicos espalhados.
+  * Dificulta a separação do sistema caso a empresa precise evoluir para microsserviços mais tarde.
+
+
+
+  ---
+
+  > **A grande lição:** O particionamento define a estrutura fundamental do sistema. Se o seu foco é acompanhamento de regras de negócio em rápida evolução, o **domínio** costuma ser preferível. Se o foco é reuso técnico estrito, o **técnico** ganha espaço. Arquitetura é sempre sobre avaliar os prós e contras para a sua necessidade específica.
+</details>
+
+
+### Particionamento do domínio
+- particionam os componentes por fluxo de trabalho ou domínios
+Vantagens:
+- modelagem melhor para o negócio
+- facilita a manobra de conway inversa para criar equipes multifuncionais em torno do domínio
+- alinha-se melhor com o estilo monolítica modular e de domíno
+- O fluxo de mensagens corresponde ao domínio do problema.
+- Facilita migrar dados e componentes para a arquitetura distribuída
+
+Desvantagens:
+- o código customizado aparece em vários locais
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ## O Conceito em Linhas Gerais
+
+  * **Particionamento de Domínio:** É organizar o software dividindo-o pelas **áreas do negócio** (ex: *Pedidos*, *Pagamentos*, *Estoque*) em vez de camadas técnicas (ex: *Front-end*, *Back-end*, *Banco de Dados*).
+  * **Lei de Conway:** Uma regra clássica que diz: *"O software reflete a estrutura de comunicação da empresa que o criou"*. Se você tem times divididos por tecnologia (um time só de Banco de Dados, um só de Front-end), o software acaba nascendo separado nessas mesmas camadas técnicas.
+  * **Manobra de Conway Inversa:** É inverter essa lógica a seu favor! Em vez de deixar a estrutura da empresa ditar o software, você **projetar a arquitetura ideal por domínio** e **reorganizar as equipes** para apoiarem essa arquitetura.
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  ### 1. Resumo do Particionamento por Domínio
+
+  Dividir o sistema por domínios foca na funcionalidade do negócio, trazendo benefícios e compensações (*trade-offs*):
+
+  * **Vantagens principais:**
+  * **Alinhamento ao Negócio:** O código reflete os fluxos reais de trabalho.
+  * **Times Multifuncionais:** Cada equipe cuida de um domínio de ponta a ponta (UI, regras, dados).
+  * **Evolução Facilitada:** Encaixa-se perfeitamente em monólitos modulares e microsserviços, facilitando migrações futuras.
+
+
+  * **Desvantagem principal:**
+  * **Duplicação Técnica:** Código utilitário ou customizado pode acabar repetido em vários módulos de domínio diferentes.
+
+
+
+  ---
+
+  ### 2. Detalhando a Manobra de Conway Inversa (*Inverse Conway Maneuver*)
+
+  No livro, destacamos como essa estratégia transforma o dia a dia da engenharia de software:
+
+  * **Passo 1 — Definir os Limites de Domínio:** O arquiteto identifica os fluxos de negócio independentes (ex: o domínio de *Entregas*).
+  * **Passo 2 — Montar Equipes Multifuncionais (*Cross-functional Teams*):** Cria-se uma equipe dedicada a esse domínio contendo todos os papeis necessários (devs *front-end*, *back-end*, especialista em banco de dados e *product owner*).
+  * **Passo 3 — Reduzir o Custo de Comunicação:** Como o time possui todas as competências para entregar uma funcionalidade de negócio inteira, eles não dependem de aprovações ou handoffs de outros times técnicos.
+  * **O Resultado Prático:** A arquitetura se torna mais coesa, o acoplamento entre times cai drasticamente e as entregas de valor para o negócio ficam muito mais rápidas.
+</details>
+
+
+### Particionamento técnico
+Vantagens:
+- Separa claramente o código customizado. 
+- Alinha-se melhor com o padrão de arquitetura em camadas.
+Desvantagens:
+- o código customizado aparece em vários locais
+
+Desvantagens:
+- maior grau de acomplamento global. Alteração no common ou local afetam outros componentes
+- os desenvolvedores podem duplicar o domíno nas camadas common e local
+- maior acomplamento no nível dos dados. Utilizam um banco de dados único. Maior complexidade ao migrar para uma arquitetura para um sistema distribuído
+
+
+
+## Função do desenvolvedor
+- dividem os componentes em classes, funções ou subcomponentes
+- o design de classes e funções é de responsabilidade compartilhada com arquitetos, responsáveis técnicos e desenvolvedores
+- componente projetados pelos arquitetos não é uma decisão final, pode ocorrer uma interação entre ambos para chegar no resultado final
+
+
+## Fluxo de Identificação dos Componentes
+![](./assets/livro-fundamentos-arquitetura/cap-8-ciclo-identificacao-componentes-2026-08-04_21-11.png)
+
+
+## Identificando os componentes iniciais
+- o arquiteto deve determinar com quais componentes de alto nível iniciar com base no tipo de particionamento
+
+## Atribuir requisitos aos componentes
+Depois de identificar os componentes, é alinhar os requisitos (ou histórias do usuário) com os componentes. POdendo criar novos componentes, consolidar ou dividir os componentes que têm responsabilidade demais.
+
+## Analisar funções e responsabilidades
+Ao atribuir histórias aos componentes, o arquiteto também vê as funções e as responsabilidades durante os requisitos. Pensar nas funções e nos componentes permite alinhar granularidade dos componetes e do domínio.
+
+## Analisar as características da arquitetura
+Ao atribuir requisitos aos componentes, o arquiteto tem que pensar nas características da arquitetura para considerar como podem impactar na divisão e granularidade do componente.
+
+## Restruturar os componentes
+- feedback é essencial
+- iterar o design continuamente com os desenvolvedores
+
+## Granularidade do componente
+- encontrar a granularidade correta é uma das tarefas mais difíceis
+- design muito granular de um componente aumenta a quantidade de comunicação entre os componentes
+- pouca granularidade aumenta o acoplamente interno
+
+## Design do componente
+- não existe jeito certo de projetar componentes
+- há uma grande variedade de técnica com seus trade-offs
+
+## Descobrindo componentes
+- o arquiteto em conjunto com desenvolvedores, analistas comerciais e especialistas, criam o design inicial do componenete e como decompor tomando como base o particionamento técnico ou do domínio
+- o objetivo da equipe é um design inicial que levam em conta as características da arquitetura
+
+## Armadilha da entidade
+- antipadrão: componentes criados com base nas entidade do banco de dados relacional
+![](./assets/livro-fundamentos-arquitetura/cap-8-mapeamento-relacional-objetos-2026-08-06_20-58.png)
+
+
+## Abordagem ator/ação
+- é uma forma popular de mapear requisitos para os componentes
+- funciona para sistemas monolíticos ou distribuídos
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  A **abordagem ator/ações** é uma técnica para transformar o que o sistema precisa fazer (requisitos) em partes organizadas do código (componentes).
+
+  Em termos simples, ela consiste em responder a duas perguntas básicas:
+
+  * **Quem** usa o sistema? (Os **Atores**, que podem ser pessoas ou outros sistemas).
+  * **O que** essa pessoa tenta fazer? (As **Ações** ou tarefas que ela realiza).
+
+  Ao listar quem são os usuários e quais tarefas eles executam, fica mais fácil agrupar os comportamentos e decidir quais blocos funcionais do sistema precisam existir.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  * **Origem e Mapeamento:** Definida originalmente no *Rational Unified Process* (RUP), essa técnica funciona mapeando os atores diretamente para as atividades que executam, ajudando a descobrir os usuários típicos e suas interações com a aplicação.
+  * **Decomposição em Componentes:** É um estilo de **decomposição inicial de componentes**. O arquiteto identifica os atores e as ações para traduzir requisitos funcionais em blocos lógicos de software.
+  * **Aplicabilidade Universal:** Funciona bem para qualquer estilo arquitetural — seja para sistemas **monolíticos** (uma única unidade de implantação) ou **distribuídos** (como microsserviços).
+  * **Ponto Forte:** É especialmente eficaz em cenários onde os requisitos apresentam **funções bem distintas** e ações bem delineadas por tipo de usuário.
+</details>
+
+
+## Tempestade de eventos
+- event storm
+- técnica de descoberta utilizada no DDD
+- funciona bem nas arquiteturas distribuídas como microsserviços
+
+
+## Abordagem do fluxo de trabalho
+- alternativa a tempestade de eventos
+- abordagem genérica para quem não usa DDD nem mensageria
+- modela componentes baseado no fluxo de trabalho
+
+
+## Estudo de caso: Goiong, Going, Gone: Descobrindo os componentes
+- abordagem ator/ação funciona bem como uma solução genérica
+
+![](./assets/livro-fundamentos-arquitetura/cap-8-conjunto-inicial-componentes-ggg-2026-08-07_11-05.png)
+
+- após a identificação inicial dos componentes, o arquiteto analisa as características da arquitetura para determinar se isso mudará o design.
+
+![](./assets/livro-fundamentos-arquitetura/cap-8-incorporando-caracteristicas-design-componentes-2026-08-07_11-21.png)
+
+
+## Quantum da arquitetura revisitado: escolhendo entre arquiteturas monolíticas versus distribuídas
+Quanta arquitetural ou granularidade: define o escopo das características da arquitetura e após o design inicial. Define se a arquitetura será monolótica ou distribuída.
+- arquitetura monolítica: uma unidade de implementação e um banco de dados. Tipos de arquitetura: blocos monolíticos em camadas e modular.
+- arquitetura distribuída: varios serviços comunicando via protocolo de rede. CAda serviço pode ter sua própria release e práticas.
+- cada arquitetura tem vários trade-offs. No sistema com um único quantum e com um conjunto de características, a arquitetura monolítica oferece muitas vantagens. NO sistema que as características são variadas e distribuidas entre os componentes, a arquitetura distribuída é a escolha certa.
+
+
+
