@@ -1777,3 +1777,184 @@ Quanta arquitetural ou granularidade: define o escopo das características da ar
 
 
 
+
+
+# PARTE II - Estilo de arquitetura
+- estilo de arquitetura: como é organizado a interface do usuário + backend + armazenamento de dados
+- padrão de arquitetura: são estrturua de design de baixo que ajuda soluções em um estilo de arquitetura
+
+
+
+# Capítulo 9: Fundamentos
+
+
+## Padrões fundamentais
+- o conceito de camadas é antigo, mas continua a se manifestar nas variantes modernas
+
+## Grande bola de lama
+- Grande bola de lama: qualquer ausência de estrutura de arquitetura
+- a falta de estrutura dificulta a alteração do código. Causa problemas na implementabilidade, testabilidade, escalabilidade e desempenho.
+
+## Arquitetura unitária
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  A **Arquitetura Unitária** (ou *Unitary Architecture*) é o estilo arquitetural mais básico da computação. Nela, todo o software e seus dados rodam diretamente em um único computador ou dispositivo físico, sem divisão em rede ou em servidores externos.
+
+  É o modelo do "sistema tudo-em-um": a aplicação e o armazenamento vivem na mesma máquina.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Na perspectiva do livro, a arquitetura unitária representa o ponto de partida histórico e prático da engenharia de software:
+
+  * **Origem Histórica**: Surgiu quando a computação se resumia ao computador e ao programa executado nele (como nos primeiros mainframes e PCs sem rede).
+  * **Evolução Natural**: Com o crescimento da complexidade dos sistemas, as arquiteturas unitárias deram lugar a modelos distribuídos (como cliente/servidor) para conseguir separar responsabilidades e lidar com mais dados.
+  * **Uso Atual**: Hoje em dia, são raros nos sistemas comerciais e corporativos. Ficam praticamente restritos a **sistemas embarcados** (como firmware de micro-ondas ou painéis automotivos) ou ambientes com severas limitações físicas/locais.
+  * **Limitação Principal**: Sistemas tendem a crescer. Para manter **desempenho e escalabilidade** (características operacionais da arquitetura), é quase sempre necessário abandonar a arquitetura unitária e dividir as preocupações do sistema.
+</details>
+
+
+## Cliente/Servidor
+- arquitetura de duas camadas ou cliente/servidor. Exemplo: frontend e backend
+
+## Desktop + servidor de banco de dados
+- Em sistemas Windows, a lógica de apresentação fica no computador pessoal (desktop) e o processamento computacional em volume e complexidade ocorre nos serviços de banco de dados através dos protocolos de rede.
+
+## Navegador + servidor web
+- a comunicação ocorre entre navegador web, servidor web e servidor de banco de dados
+
+## Três camadas
+- uma camada do banco de dados, uma camada da aplicação e um frontend
+
+## Arquiteturas monolíticas versus distribuídas
+- estilos de arquitetura:
+  + monolítico
+    - Arquitetura em camadas (Capítulo 10) 
+    - Arquitetura de pipeline (Capítulo 11) 
+    - Arquitetura de microkernel (Capítulo 12)
+  + distribuído
+    - Arquitetura baseada em serviços (Capítulo 13) 
+    - Arquitetura orientada a eventos (Capítulo 14)
+    - Arquitetura baseada em espaços (Capítulo 15)
+    - Arquitetura orientada a serviços (Capítulo 16)
+    - Arquitetura de microsserviços (Capítulo 17)
+- trade-offs da arquitetura distribuída: falácias da arquitetura distribuídas
+
+
+## Falácia 1: a rede é confiável
+![](./assets/livro-fundamentos-arquitetura/cap-9-falacia-1-rede-confiavel-2026-08-13_11-13.png)
+
+
+## Falácia 2: a latência é zero
+![](./assets/livro-fundamentos-arquitetura/cap-9-falacia-2-latencia-zero-2026-08-13_11-16.png)
+
+
+## Falácia 3: a largura de banda é infinita
+![](./assets/livro-fundamentos-arquitetura/cap-9-falacia-3-largura-banda-2026-08-13_11-20.png)
+
+O Stamp Coupling (ou acoplamento de estampa) ocorre quando múltiplos módulos ou serviços compartilham uma estrutura de dados complexa (ou um grande conjunto de dados), mas o serviço receptor necessita apenas de uma fração/parte desses dados para realizar sua operação.
+
+
+## Falácia 4: a rede é segura
+![](./assets/livro-fundamentos-arquitetura/cap-9-falacia-4-rede-segura-2026-08-14_17-39.png)
+
+
+## Falácia 5: a topologia nunva muda
+![](./assets/livro-fundamentos-arquitetura/cap-9-falacia-5-topologia-nunca-muda-2026-08-14_17-42.png)
+
+
+
+## Falácia 6: existe apenas um administrador
+![](./assets/livro-fundamentos-arquitetura/cap-9-falacia-6-existe-apenas-um-administrador-2026-08-14_17-45.png)
+
+
+## Falácia 7: o custo do transporte é zero
+![](./assets/livro-fundamentos-arquitetura/cap-9-falacia-7-custo-transporte-zero-2026-08-14_17-47.png)
+
+
+
+## Falácia 8: a rede é homogênea
+![](./assets/livro-fundamentos-arquitetura/cap-9-falacia-8-rede-homogenea-2026-08-14_17-50.png)
+
+
+## Outras considerações distribuídas
+
+### Log distribuído
+- sistemas monolíticos tem um local centralizado dos logs
+- sistemas distribuídos tem os logs espalhado entre os serviços
+- ferramentas com Splunk ajudam na consolidação dos logs, mas isso é somente o a superfície do problema
+
+### Transações distribuídas
+- consistência eventual
+- sagas transacionais: gerencia transações distribuídas
+- BASE significa disponibilidade (B)ásica, estado (S)uave e consistência (E)ventual
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  **O Conceito em Linhas Gerais**
+
+  Em sistemas únicos e centralizados (monólitos), a gestão de dados é simples: quando você faz uma operação, como uma compra online, o banco de dados garante que ou **tudo dá certo** ou **nada é salvo** (transação ACID).
+
+  Em sistemas distribuídos (onde a aplicação é dividida em vários serviços e bancos separados), garantir essa sincronização imediata torna-se quase impossível. Nesses ambientes, adota-se a **consistência eventual**: os dados de diferentes serviços ficam temporariamente desalinhados, mas acabam se sincronizando e se tornando consistentes após um determinado tempo.
+
+  ---
+
+  **A Visão dos Autores (Richards & Ford)**
+
+  * **Trade-off Fundamental**: Em arquiteturas distribuídas, ganha-se alta escalabilidade, desempenho e disponibilidade, mas paga-se o preço na perda da consistência imediata dos dados.
+  * **Transações BASE**: Em contraste com as transações ACID do mundo monolítico, sistemas distribuídos usam o modelo BASE (*Basic Availability, Soft-State, Eventual Consistency*). Trata-se de uma técnica na qual o estado do sistema é "suave" (temporário ou transitório) enquanto as informações trafegam entre origens e destinos.
+  * **Padrão Saga**: Para gerenciar transações em múltiplos serviços sem o bloqueio tradicional de banco de dados, utilizam-se técnicas como **sagas transacionais**. Elas usam eventos ou máquinas de estado para coordenar etapas e aplicar ações de compensação (estornos) caso algum passo falhe no caminho.
+</details>
+
+
+### Manutenção e versionamento de contrato
+- desafio da arquitetura distribuída é a criação, manutenção e versionamento de contratos
+
+
+## Resumo
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  O **Capítulo 9: Fundamentos** funciona como uma ponte conceitual na obra. Ele estabelece as fundações para entender a grande divisão do design de software: **arquiteturas monolíticas versus arquiteturas distribuídas**.
+
+  O capítulo contrasta a simplicidade e o controle dos modelos centralizados (monólitos) com a complexidade, os riscos e as armadilhas de mover o processamento para múltiplos nós conectados em rede (sistemas distribuídos).
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  * **Evolução dos Estilos Arquiteturais**:
+  * **Grande Bola de Lama (*Big Ball of Mud*)**: É a antítese da arquitetura. Ocorre quando não há estrutura definida, tornando o código difícil de alterar e prejudicando a testabilidade, manutenibilidade e escalabilidade.
+  * **Arquitetura Unitária**: Tudo roda em uma única máquina (dados e aplicação). Hoje restrita a sistemas embarcados ou cenários com forte restrição física.
+  * **Cliente/Servidor e Três Camadas**: A evolução natural para separar a interface (desktop/navegador), a lógica de aplicação e a persistência em banco de dados.
+  * **Monolítico vs. Distribuído**:
+  * *Monolíticos* (Camadas, Pipeline, Microkernel): Executam em uma única unidade de implantação.
+  * *Distribuídos* (Orientado a Eventos, Microsserviços, Baseado em Espaços, etc.): Separam responsabilidades através da rede.
+
+
+
+
+  * **As 8 Falácias da Computação Distribuída**:
+  * **1. A rede é confiável**: Falhas de rede acontecem; sistemas distribuídos precisam lidar com quedas e perda de pacotes.
+  * **2. A latência é zero**: Chamar um serviço remoto sempre leva mais tempo do que uma chamada de memória local.
+  * **3. A largura de banda é infinita**: Enviar volumes excessivos de dados causa gargalos (*stamp coupling* ocorre quando se envia um objeto complexo inteiro quando o serviço precisava de apenas um campo).
+  * **4. A rede é segura**: Dados trafegando pela rede exigem criptografia e autenticação constante.
+  * **5. A topologia nunca muda**: Servidores, roteadores e endereços IP mudam com frequência.
+  * **6. Existe apenas um administrador**: Múltiplos times e administradores gerenciam a infraestrutura, o que pode causar inconsistências de configuração.
+  * **7. O custo do transporte é zero**: Trafegar dados na rede (especialmente em nuvem) gera custos financeiros diretos.
+  * **8. A rede é homogênea**: Diversos hardware, sistemas operacionais e protocolos coexistem no mesmo ecossistema.
+
+
+  * **Desafios Operacionais em Ambientes Distribuídos**:
+  * **Observabilidade e Logs**: Diferente de monólitos com logs centralizados, sistemas distribuídos precisam de ferramentas de agregação e rastreamento correlacionado.
+  * **Transações Distribuídas**: Abandona-se o modelo **ACID** (consistência imediata) em prol do modelo **BASE** (*Basic Availability, Soft-State, Eventual Consistency*). O padrão **Saga** é utilizado para gerenciar etapas e transações de compensação (estornos).
+  * **Contratos e Versionamento**: A manutenção e a evolução contínua das interfaces (APIs/contratos) entre serviços tornam-se críticas para evitar que mudanças em um serviço quebrem outros.
+</details>
+
