@@ -1958,3 +1958,96 @@ O Stamp Coupling (ou acoplamento de estampa) ocorre quando múltiplos módulos o
   * **Contratos e Versionamento**: A manutenção e a evolução contínua das interfaces (APIs/contratos) entre serviços tornam-se críticas para evitar que mudanças em um serviço quebrem outros.
 </details>
 
+
+
+
+
+
+# Capítulo 10: Estilo de Arquitetura em Camadas
+- Arquitetura em camdas ou multicamadas (n-tier)
+- baseado na lei de conway (comunicação das organizações é refletida nos sistemas)
+
+## Topologia
+- utilizam camadas horizontais lógicas
+- camadas padrões:
+  - apresentação
+  - comercial
+  - persistência
+  - banco de dados
+
+![](./assets/livro-fundamentos-arquitetura/cap-10-camadas-logicas-padrao-2026-08-16_15-29.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-10-variante-topologia-2026-08-16_15-32.png)
+
+- particionamento técnico: agrupado por função técnica. Uma alteraçao de cliente pode ser alterada na camada de apresentação, domínio e persistência de dados, por exemplo.
+- particionada por domínio: agrupado por domínio de informação. Ex: cliente
+
+## Camadas de isolamento
+- camada fechada: conforme a informação passa entre as camadas, ela deve passar os dados de sua camada, especificamente, para camada abaixo, sem pular camadas
+- camada aberta: permite que as camadas sejam acessadas fora da ordem natural, ou seja, por exemplo, poderia passar da camada de apresentação para a camada de persistência
+
+![](./assets/livro-fundamentos-arquitetura/cap-10-camada-fechada-2026-08-17_21-00.png)
+
+- camada de isolamento: alterações feitas em uma camada afetam outras camadas
+
+## Adicionando camadas
+![](./assets/livro-fundamentos-arquitetura/cap-10-compartilhando-camada-negocio-2026-08-17_21-10.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-10-adicionando-camada-servico-2026-08-17_21-14.png)
+
+
+## Outras considerações
+Antipadrão sinkhole: as informações passam de camada para camada sem existir um regra de negócio. Somente seguindo o padrão de comunicação entre as camadas.
+
+## Por que usar esse estilo de arquitetura
+- menor custo
+- quando o arquiteto ainda está em analise das necessidades de negócio e requisitos
+- características como manutenção, agilidadem testabilidade e implementabilidade são afetadas negativamente
+
+
+## Classificações das características da arquitetura
+![](./assets/livro-fundamentos-arquitetura/cap-10-classificacoes-caracteristicas-arquitetura-camadas-2026-08-18_21-38.png)
+
+- a arquitetura em camadas tem uma classificação alta de custo e simplicidade enquanto a quantidade de código está baixa. Conforme a quantidade de código aumenta, vai torando cada vez mais complexa.
+
+
+## Resumo
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  A **Arquitetura em Camadas** (ou *n-tier*) é o estilo arquitetural mais comum e tradicional na engenharia de software. Ela divide a aplicação em seções horizontais, onde cada camada possui um papel técnico específico e bem definido (por exemplo, exibir dados na tela, processar regras de negócio ou salvar informações no banco de dados).
+
+  Por se organizar com base nas competências técnicas da equipe, esse modelo reflete diretamente a **Lei de Conway**: a estrutura do sistema acaba espelhando a estrutura de comunicação da organização (ex.: time de frontend, time de backend e time de DBA).
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  * **Topologia e Particionamento Técnico:**
+  * **Particionamento Técnico:** O sistema é estruturado por papéis técnicos, e não por funcionalidades de negócio. Por isso, implementar uma simples mudança de funcionalidade (como alterar o cadastro de um cliente) costuma exigir modificações em cascata na Apresentação, no Domínio/Negócio e na Persistência.
+  * **Camadas Padrão:** Geralmente, divide-se em quatro camadas fundamentais:
+  1. **Apresentação:** Interface com o usuário.
+  2. **Regra de Negócio (Comercial/Domínio):** Lógica da aplicação.
+  3. **Persistência:** Comunicação e mapeamento dos dados.
+  4. **Banco de Dados:** Armazenamento físico das informações.
+
+
+
+
+  * **Camadas de Isolamento (Abertas vs. Fechadas):**
+  * **Camadas Fechadas:** A requisição precisa passar obrigatoriamente por cada camada subsequente sem pular nenhuma. Isso garante o **conceito de isolamento**: alterações em uma camada não impactam as outras, desde que o contrato de interface seja mantido.
+  * **Camadas Abertas:** Permitem que uma camada superior acesse diretamente uma camada mais abaixo (por exemplo, a Apresentação acessar diretamente a Persistência para consultas simples). Aumenta a velocidade, mas reduz o isolamento e aumenta o acoplamento.
+  * **Adicionando Camadas:** É comum incluir camadas intermediárias (como uma camada de Serviços compartilhada) para isolar responsabilidades específicas ou reutilizar lógicas entre diferentes fluxos.
+
+
+  * **Cuidados e Antipadrões:**
+  * **Antipadrão *Architecture Sinkhole*:** Ocorre quando requisições passam por várias camadas sequenciais apenas atuando como "passagem de dados", sem executar nenhuma regra de negócio real. Se mais de 20% das requisições apresentarem esse comportamento, a arquitetura pode estar inflada e ineficiente.
+
+
+  * **Trade-offs e Avaliação de Características:**
+  * **Pontos Fortes:** Baixo custo inicial, alta simplicidade e grande facilidade de entendimento/desenvolvimento para times iniciantes. É uma excelente escolha para novos projetos em fase de descoberta de requisitos.
+  * **Pontos Fracos:** Sofre com baixa agilidade, testabilidade e implantabilidade à medida que o sistema cresce. Conforme a base de código expande, a complexidade aumenta substancialmente, tornando o software monolítico, rígido e difícil de manter.
+</details>
+
