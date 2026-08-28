@@ -2051,3 +2051,86 @@ Antipadrão sinkhole: as informações passam de camada para camada sem existir 
   * **Pontos Fracos:** Sofre com baixa agilidade, testabilidade e implantabilidade à medida que o sistema cresce. Conforme a base de código expande, a complexidade aumenta substancialmente, tornando o software monolítico, rígido e difícil de manter.
 </details>
 
+
+
+
+
+
+# Capítulo 11: Estilo de arquitetura pipeline
+Um estilo fundamental na arquitetura que divide a funcionalidade em partes distintas. O princípio por trás do shell do terminal Unix como o bash e zsh.
+
+MapReduce segue essa topologia básica: https://en.wikipedia.org/wiki/MapReduce
+
+## Topologia
+![](./assets/livro-fundamentos-arquitetura/cap-11-topologia-pipeline-2026-08-24_22-15.png)
+
+Os canais e os filtros coordenam-se de um modo específico, com os canais formando uma comunicação unidirecional entre os filtros, em geral de ponto a ponto.
+
+
+## Canais
+Os pipes foram o canal de comunicação com os filtros.
+
+
+## Filtros
+- são autonomos e independentes dos outros filtros
+- devem realizar paenas uma tarefa
+
+Tipos de filtros:
+- produtor: ponto de partida, somente saída
+- transformador: aceita entrada, opcionalmente transforma algum ou todos os dados, encaminha para o canal de saída
+- verificador: aceita entrada, testa um ou mais critérios, produz saída. Semelhante com reduce (redução)
+- consumidor: ponto de termino da pipeline, persiste o resultado no banco de dados ou exibe resultado numa tela de interface do usuário
+
+More shell, less egg: https://leancrew.com/all-this/2011/12/more-shell-less-egg/
+```bash
+tr -cs A-Za-z '\n' |
+tr A-Z a-z |
+sort |
+uniq -c |
+sort -rn |
+sed ${1}q
+```
+
+
+## Exemplo
+As ferramentas ETL (extrair, transformar e carregar — do inglês extract, transform, load) utilizam a arquitetura pipeline também para o fluxo e a modificação dos dados de um banco de dados ou fonte de dados para outra.
+
+![](./assets/livro-fundamentos-arquitetura/cap-11-exemplo-arq-pipeline-2026-08-25_20-57.png)
+
+
+## Classificação das características
+- 1 estrela não é bem suportado
+- 5 estrela a característica é um recurso mais forte
+- quantum arquitetural para a arquitetura pipeline é 1 e é monolítica
+
+![](./assets/livro-fundamentos-arquitetura/cap-11-classificacao-caracteristica-arquitetural-pipeline-2026-08-25_21-10.png)
+
+
+## Resumo
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  O estilo de arquitetura **pipeline** divide o processamento de dados em etapas sequenciais e independentes, inspirando-se no comportamento de terminais Unix (como *bash* e *zsh*) e em ferramentas de integração de dados como o **ETL** (extrair, transformar e carregar). Cada etapa realiza uma tarefa específica e passa o resultado para a próxima por meio de canais de comunicação unidirecionais.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Mark Richards e Neal Ford detalham que este estilo estrutural é composto por dois elementos principais e possui características arquiteturais bem definidas:
+
+  * **Topologia e Canais:** Os componentes se conectam de forma ponto a ponto e unidirecional. Os **pipes (canais)** atuam como o meio de transporte de dados entre os componentes.
+  * **Tipos de Filtros:** Os filtros são autônomos, independentes e executam apenas uma única tarefa. Eles se dividem em quatro categorias:
+  * **Produtor:** O ponto de partida; possui apenas saída.
+  * **Transformador:** Recebe dados, pode modificá-los parcial ou totalmente e os encaminha para a saída.
+  * **Verificador (ou Testador):** Avalia critérios específicos sobre os dados de entrada (semelhante à operação *reduce*).
+  * **Consumidor:** O ponto final da pipeline; responsável por persistir os dados em banco ou exibi-los em interface.
+
+
+  * **Quantum Arquitetural e Características:**
+  * O **quantum arquitetural** (a unidade imutável de independência de implantação) é igual a **1**, sendo classificado como uma arquitetura **monolítica**.
+  * A avaliação das características arquiteturais varia de acordo com a capacidade do modelo (de 1 a 5 estrelas), refletindo seus pontos fortes e limitações estruturais.
+</details>
+
+
