@@ -2134,3 +2134,101 @@ As ferramentas ETL (extrair, transformar e carregar — do inglês extract, tran
 </details>
 
 
+
+
+
+# Capítulo 12: Estilo de arquitetura microkernel
+- também conhecido como arquitetura plug-in
+
+## Topologia
+- estrutura monolótica
+- consiste de dois componentes: um sistema central e componentes plug-in
+
+![](./assets/livro-fundamentos-arquitetura/cap-12-componentes-arquitetura-microkernel-2026-08-27_21-56.png)
+
+## Sistema Central
+- O IDE eclipse é um bom exemplo
+
+![](./assets/livro-fundamentos-arquitetura/cap-12-variacao-sistema-central-microkernel-2026-08-27_22-04.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-12-variante-iu-2026-08-27_22-08.png)
+
+
+## Componentes de plugin
+- são autonomos e independentes entre si
+
+![](./assets/livro-fundamentos-arquitetura/cap-12-plugin-biblioteca-compartilhada-2026-08-27_22-15.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-12-plugin-pacote-namespace-2026-08-27_22-19.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-12-plugin-remoto-rest-2026-08-28_21-21.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-12-componente-plugin-proprio-armazenamento-dados-2026-08-28_21-26.png)
+
+
+## Registro
+- sistema central precisa saber quais módulos de plug-in estão disponíveis e como obtê-los
+- registro contém informação de cada plug-in
+- registro pode ser simples como uma estrutura de mapa ou complexa como uma ferramenta de registro e descoberta no sistema central
+
+## Contrato
+- contratos entre plug-in e sistema central
+- contratos personalizados são comuns em plug-in desenvolvido por terceiro, mas cria-se um adaptador entre o contrato do plugin de terceiro e o seu contrato padrão 
+
+
+## Exemplos e casos de uso
+- Exemplos de software implementando a arquitetura microkernel:
+  - eclipse
+  - PMD
+  - Jira
+  - Jekins
+  - Chrome
+  - Firefox
+- outra forma de utilização pode ser em sistemas complexos que possuem diversas regras de negócios que são alteradas ou adicionadas frequentemente. Cada regra nova pode ser adicionada como um plug-in (componente)
+
+
+## Classificações das características da arquitetura
+![](./assets/livro-fundamentos-arquitetura/cap-12-classificacao-caracteristicas-microkernel-2026-08-29_16-37.png)
+
+
+## Resumo
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  O **Estilo de Arquitetura Microkernel** (frequentemente chamado de **arquitetura plug-in**) é um padrão de projeto ideal para softwares que precisam ser extensíveis, adaptáveis e capazes de receber novos recursos sem que a aplicação principal precise ser totalmente reescrita.
+
+  Pense nele como a estrutura de um navegador web ou de um videogame: existe um núcleo básico que faz o sistema funcionar e, ao seu redor, encaixamos extensões (plug-ins) que adicionam funcionalidades específicas conforme a necessidade do usuário.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Segundo Mark Richards e Neal Ford, esta arquitetura divide o sistema em duas partes principais, garantindo flexibilidade e isolamento de funcionalidades:
+
+  * **O Sistema Central (Core System):**
+  * É a base mínima necessária para o funcionamento da aplicação.
+  * Contém apenas a lógica essencial e o fluxo geral, servindo de hospedeiro para os plug-ins (um exemplo clássico citado pelos autores é o ambiente de desenvolvimento **Eclipse**).
+  * Pode variar desde uma estrutura simples até variações que incluem interfaces de usuário próprias.
+
+
+  * **Os Componentes Plug-in:**
+  * São módulos autônomos e independentes entre si, contendo funcionalidades específicas, regras de negócio isoladas ou até mesmo seus próprios armazenamentos de dados.
+  * Podem ser implementados de várias formas: desde bibliotecas compartilhadas e pacotes de namespace até serviços remotos via REST.
+
+
+  * **Mecanismos de Integração (Registro e Contrato):**
+  * **Registro:** O sistema central precisa descobrir quais plug-ins estão disponíveis. O registro armazena informações sobre cada um deles, variando de estruturas de mapas simples a ferramentas complexas de descoberta.
+  * **Contrato:** Define as regras de comunicação entre o sistema central e os plug-ins. Quando lidamos com terceiros, é comum o uso de adaptadores para traduzir contratos externos para o padrão esperado pelo núcleo.
+
+
+  * **Casos de Uso e Exemplos:**
+  * Muito utilizado em ferramentas conhecidas como **Eclipse, Jira, Jenkins, Chrome, Firefox**, além de ferramentas de análise de código como o **PMD**.
+  * Excelente para domínios complexos com regras de negócio altamente voláteis: cada regra nova pode ser isolada e adicionada como um plug-in independente.
+
+
+  * **Características Arquiteturais:**
+  * **Extensibilidade e Modularidade:** Altamente pontuadas, pois facilitam a adição de novos recursos de forma desacoplada.
+  * **Implantação e Acoplamento:** Dependem de como os plug-ins são empacotados (se via bibliotecas locais ou serviços remotos), exigindo atenção ao versionamento e aos contratos estabelecidos com o núcleo.
+</details>
