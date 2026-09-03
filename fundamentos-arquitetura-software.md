@@ -2232,3 +2232,157 @@ As ferramentas ETL (extrair, transformar e carregar — do inglês extract, tran
   * **Extensibilidade e Modularidade:** Altamente pontuadas, pois facilitam a adição de novos recursos de forma desacoplada.
   * **Implantação e Acoplamento:** Dependem de como os plug-ins são empacotados (se via bibliotecas locais ou serviços remotos), exigindo atenção ao versionamento e aos contratos estabelecidos com o núcleo.
 </details>
+
+
+
+# Capítulo 13: Estilo de arquitetura baseada em serviços
+- Arquitetura baseada em serviços é uma combinação do estilo microserviços
+- Embora a arquitetura baseada em serviços seja distribuída, ela não tem a mesma complexidade e custo das outras arquiteturas distribuídas, como os microsserviços ou a arquitetura baseada em eventos, tornando-a uma escolha muito popular para inúmeras aplicações comerciais.
+
+
+## Topologia
+- segue a macroestrutura em camadas que consistem em:
+  - uma interface do usuário separada
+  - serviços gerais separados 
+  - e um banco de dados monolítico
+- os serviços são granulares (partes de uma aplicação, também chamado de serviços de domínio), independentes e implantados separadamente
+
+![](./assets/livro-fundamentos-arquitetura/cap-13-topologia-arquitetura-baseada-serviços-2026-08-30_11-05.png)
+
+
+## Variantes da topologia
+![](./assets/livro-fundamentos-arquitetura/cap-13-variante-iu-arquitetura-baseada-servicos-2026-08-31_21-15.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-13-vairante-bd-arquitetura-baseada-servicos-2026-08-31_21-18.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-13-camada-api-entre-iu-servicos-dominio-arquitetura-baseada-servicos-2026-08-31_21-20.png)
+
+
+## Design do serviço e granulidade
+- o design do serviço pode ser no estilo de arquitetura em Camadas
+  - uma camada de api
+  - uma camada de comercial
+  - camada de persistência
+- outro design popular é uma partição por domínio com subdomínios
+![](./assets/livro-fundamentos-arquitetura/cap-13-variante-design-servico-dominio-2026-08-31_21-36.png)
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  Trata-se da diferença prática de **granularidade** e **gestão de transações** entre uma arquitetura baseada em serviços (serviços de domínio mais grossos) e uma arquitetura de microsserviços (serviços altamente especializados e granulares).
+
+  Quando você divide um sistema em partes muito pequenas, ganha agilidade para alterar e implantar código sem afetar outras partes, mas perde a facilidade de manter dados integrados e transações atômicas (tudo ou nada).
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Os autores abordam esse dilema demonstrando a constante troca de vantagens (*trade-offs*) no design de sistemas:
+
+  * **Transações e Consistência de Dados:**
+  * **Serviços de Domínio (Grosseiros):** Como as etapas da operação ocorrem dentro do mesmo serviço e banco de dados, é fácil garantir a consistência de dados. Se o pagamento falhar, a transação faz um *rollback* automático e limpa tudo.
+  * **Microsserviços (Finos):** O processo é distribuído em vários serviços chamados via rede (`OrderPlacement`, `PaymentService`, etc.). Se a chamada de pagamento falhar após a criação do pedido, o sistema entra em um estado inconsistente. Lidar com o estoque ou reverter o registro exige orquestração e lógica adicional complexa.
+
+
+  * **Facilidade de Mudança e Risco de Implantação:**
+  * **Serviços de Domínio (Grosseiros):** Qualquer alteração pontual exige testar e implantar um serviço maior por inteiro, o que aumenta o risco de impactar funcionalidades que não foram modificadas.
+  * **Microsserviços (Finos):** Como cada serviço tem responsabilidade única, alterações afetam apenas a unidade pequena correspondente. O risco de quebrar outras partes do sistema cai drasticamente e o ciclo de implantação fica mais rápido.
+</details>
+
+
+## Particionamento do banco de dados
+- na arquitetura baseada em serviço temos um único banco de dados devido a quantidade de serviço baixa (quatro a doze). Essa mesma característica de banco de dados único pode trzer complexidade ao alterar uma tabela poder afetar o sistema como um todo
+- neste mesmo estilo de arquitetura é comum utilizar uma bilioteca comártilhada que auxilia na manipulação de acesso ao banco de dados. Qualquer alteração na tabela deve impactar todos os serviços que compartilham a mesma biblioteca, sem esquecer da necessidade de atualização da bilioteca em cada serviço.
+
+![](./assets/livro-fundamentos-arquitetura/cap-13-biblioteca-compartilhada-para-bd-2026-08-31_22-04.png)
+
+- para diminuir essa dependência da biblioteca compartilhada é utilizar o particionamento lógico do serviço refletir na bilioteca compartilhada. Pode-ser dividir de acordo com os domínios. Ao alterar uma tabela, somente uma das biliotecas seriam afetadas.
+
+![](./assets/livro-fundamentos-arquitetura/cap-13-biblioteca-compartilhada-por-entidade-bd-2026-08-31_22-11.png)
+
+> Torne o particionamento lógico no banco de dados o mais detalhado possível, ainda mantendo os domínios dos dados bem definidos para controlar melhor as alterações no banco de dados em uma arquitetura baseada em serviços.
+
+
+## Arquitetura de exemplo
+![](./assets/livro-fundamentos-arquitetura/cap-13-exemplo-reciclagem-eletronico-2026-09-01_20-58.png)
+
+
+## Classificação das características da arquitetura
+
+![](./assets/livro-fundamentos-arquitetura/cap-13-caracteristicas-arquitetura-baseada-servicos-2026-09-01_21-03.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-13-quanta-separado-arquitetura-baseada-servicos-2026-09-01_21-08.png)
+
+
+
+## Quando usar esse estilo de arquitetura
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  A **arquitetura baseada em serviços** é um estilo pragmático de distribuição de software. Ela funciona como um "meio-termo" ideal: divide o sistema em partes menores com base nas áreas do negócio (domínios), sem levar essa divisão ao extremo das granularidades ultra-pequenas. É a escolha perfeita para quando você precisa de modularidade e independência de implantação, mas quer fugir da complexidade excessiva e do custo elevado de estilos distribuídos mais agressivos.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Mark Richards e Neal Ford destacam os cenários práticos e as decisões que justificam a escolha deste estilo:
+
+  * **Pragmatismo sem Custo Excessivo**: É uma das opções mais viáveis. Outros estilos distribuídos trazem um "poder" maior, mas acompanhado de custos e complexidade absurdos. Escolher algo mais complexo sem necessidade é comparado a comprar uma Ferrari para andar a 50 km/h no trânsito pesado — gera desperdício de recursos e dinheiro.
+  * **Alinhamento com Design Orientado a Domínios (DDD)**: Cada serviço abrange um domínio de negócio bem definido e é implantado separadamente. Isso isola as funcionalidades em unidades próprias, tornando as alterações no código muito mais fáceis e seguras.
+  * **Preservação de Transações ACID**: Diferente de outros sistemas distribuídos que dependem quase totalmente de consistência eventual, esse estilo preserva melhor as transações tradicionais (*commit* e *rollback*). Como o escopo da regra costuma ficar dentro de um único serviço de domínio, evita-se a necessidade constante de padrões complexos como *Sagas* ou transações *BASE*.
+  * **Fuga da Complexidade de Granularidade**: Serviços excessivamente pequenos (muito granulares) exigem coordenação complexa via **Orquestração** (um serviço central controlando o fluxo como um maestro) ou **Coreografia** (serviços conversando entre si diretamente como dançarinos). Por ter serviços com escopos mais abrangentes, a arquitetura baseada em serviços exige muito menos coordenação e evita essas armadilhas.
+</details>
+
+
+## Resumo
+<details>
+  <summary>Gerado por IA</summary>
+  Olá! Que ótimo ver você se dedicando ao estudo do livro. A arquitetura baseada em serviços é um dos tópicos mais pragmáticos e importantes para quem está iniciando na engenharia de software.
+
+  Abaixo, estruturei o resumo detalhado do **Capítulo 13: Estilo de Arquitetura Baseada em Serviços**, organizando as ideias para facilitar seu aprendizado.
+
+  ---
+
+  ### O Conceito em Linhas Gerais
+
+  A **arquitetura baseada em serviços** é um estilo distribuído que funciona como um "meio-termo" prático entre o monólito tradicional e os microsserviços.
+
+  Em vez de dividir o sistema em centenas de peças minúsculas, você o divide em um número menor de serviços maiores (geralmente entre 4 e 12), chamados de **serviços de domínio** ou serviços gerais. Cada serviço representa uma área do negócio e pode ser implantado de forma independente, mas todos costumam compartilhar um único banco de dados.
+
+  É uma das escolhas mais populares para aplicações comerciais porque entrega a flexibilidade de um sistema distribuído sem trazer o custo e a complexidade extrema de estilos como microsserviços ou arquitetura baseada em eventos.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Mark Richards e Neal Ford detalham este estilo analisando sua estrutura, decisões de design, banco de dados e os cenários em que ele deve ser adotado:
+
+  * **Topologia e Macroestrutura:**
+  * **Interface do Usuário (UI):** Fica separada da camada de serviços.
+  * **Serviços de Domínio:** São unidades com granularidade mais grossa (grosseira), independentes e implantadas separadamente.
+  * **Banco de Dados:** Geralmente é monolítico e compartilhado entre os serviços.
+  * **Camada de API:** Pode existir uma camada intermediária de API entre a UI e os serviços para organizar as chamadas.
+
+
+  * **Design e Granularidade dos Serviços:**
+  * O design interno do serviço pode seguir o estilo em **Camadas** (API, Comercial/Regra de Negócio, Persistência) ou ser **particionado por Domínio** e subdomínios.
+  * **Troca de Vantagens (Trade-offs):** Serviços mais grossos preservam a facilidade de transações ACID (tudo ou nada) em um único banco de dados. Em contrapartida, alterações no código exigem testar e implantar um serviço maior, diferentemente dos microsserviços de granularidade fina.
+
+
+  * **Particionamento do Banco de Dados e Bibliotecas:**
+  * Por ter um banco de dados único compartilhado por poucos serviços, alterações em tabelas podem causar impacto em cascata no sistema.
+  * É comum o uso de **bibliotecas compartilhadas** para acesso aos dados. Para reduzir o acoplamento perigoso, os autores recomendam o **particionamento lógico** dessas bibliotecas por domínio/entidade, garantindo que a alteração em uma tabela afete apenas a biblioteca daquele domínio específico.
+
+
+  * **Quando Usar (Pragmatismo de Engenharia):**
+  * **Evita a "Complexidade de Ferrari":** Adotar microsserviços sem necessidade é como comprar uma Ferrari para rodar no trânsito pesado. A arquitetura baseada em serviços entrega independência de implantação com custo muito menor.
+  * **Preserva Transações Simples:** Evita a necessidade de padrões complexos de coordenação de dados distribuídos (como Sagas ou orquestração/coreografia pesadas), pois a maioria das regras roda dentro do mesmo banco e serviço.
+  * **Alinhamento com DDD:** Encaixa-se perfeitamente quando você deseja separar o sistema pelas áreas do negócio (Design Orientado a Domínio) de forma clara e simples.
+</details>
+
+
+
