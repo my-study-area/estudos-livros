@@ -2386,3 +2386,371 @@ As ferramentas ETL (extrair, transformar e carregar — do inglês extract, tran
 
 
 
+# Capítulo 14: Estilo de arquitetura orientada a eventos
+- é um arquitetura assíncrona distribuída e de alto desempenho
+- composta de componentes de processamento de eventos de modo assíncrono
+- modelo baseado em requisição: atua de forma determinística e sincrona. Um exemplo comum é um usuário do sistema acessar sua informações num histórico 
+- modelo orientado a eventos: reage a certa situação e toma uma ação. Um exemplo é um sistema de leilão virtual. Enviar o lance ocorre após ser anunciado o valor. O sistema compara o lences recebidos e determina o lance com valor mais alto.
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-modelo-baseadi-requisicao-2026-09-03_20-54.png)
+
+
+## Topologia
+- topologia do mediador: é usada quando se requer controle sobre o fluxo
+- topologia do broker: é usada quando se requer um alto grau de resposta e controle dinâmico
+
+## Topologia do broker
+- não existe mediador central
+- útil quando tem um fluxo de processamento simples, sem orquestração e coordenação de eventos
+
+Componentes da topologia:
+- evento iniciador: é o evento inicial que inicia o fluxo
+- processador de evento: como não existe um mediador, ele mesmo processa o evento
+- evento processado: enviado de forma assíncrona para broker para mais processamento, se necessário
+
+É uma boa prática na topologia do broker que cada processador do evento divulgue o que fez. Um exemplo seria o envio de evento para envio de email para um processador de evento que publicaria novamente, mas ninguém consumiria o evento. Está ação parece perda de recurso, mas não é porque no futuro pode surgir uma funcionalidade analisar o e-mails enviados, então um processador de evento com um mínimo de esforço
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-evento-notificacao-enviado-ignorado-2026-09-03_21-30.png)
+
+Exemplo de topologia de broker:  
+![](./assets/livro-fundamentos-arquitetura/cap-14-exemplo-topologia-broker-2026-09-03_21-38.png)
+
+Desvantagens:
+- não existe nenhum controle de fluxo
+- é muito dinâmico e ninguém sabe quando a transação realmente é concluída
+- tratamento de erro é um desafio
+- em caso de erro, como não existe um mediador, ninguém sabe quando ocorre uma falha
+- todos processor avançam sem levar em conta o erro, por exemplo, o item é removido do estoque 
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-tradeoff-topologia-broker-2026-09-03_21-50.png)
+
+
+## Topologia do mediador
+- no centro da topologia está um mediador que gerencia o fluxo de trabalho
+- O componentes da topologia são:
+  - evento iniciador: inicia todo o processo e envia um evento para fila de eventos iniciadores que é aceita pelo mediador.
+  - fila de eventos: 
+  - mediador de eventos: conhece as etapas envolvidas no processamento dos eventos
+  - canais
+  - processador de eventos: processam os eventos e respondem novamente ao mediador. Diferente da topologia do broker que divulga para todo o sistema.
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-topologia-mediador-2026-09-04_21-08.png)
+
+- Apache Camel ou Spring Integration são exemplos de mediadores para um simples tratamento de erro e orquestrador.
+- Apache ODE e Oracle BPEL Process Manager são exemplos de mediador com muito processamento condicional e multiplos caminhos dinâmicos com tratamento de erros complexos.
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-mediador-delegando-devido-tipo-mediador-2026-09-04_21-18.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-etapas-mediador-pedidos-2026-09-04_21-24.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-etapa-1-exemplo-mediador-2026-09-04_21-31.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-etapa-2-exemplo-mediador-2026-09-04_21-36.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-etapa-3-exemplo-mediador-2026-09-04_21-38.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-etapa-4-exemplo-mediador-2026-09-04_21-39.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-etapa-5-exemplo-mediador-2026-09-04_21-40.png)
+
+- ocorrências de processamento na toplogia de broker são eventos (coisas que já aconteceram). Na topologia do mediador são comandos (coisas que precisam acontecer). Um comando deve ser processado, já um evento pode ser ignorado.
+
+Pontos negativos na topologia do mediador:
+- é difícil modelar de forma declarativa o processamento dinâmico
+- o processador não são tão desacoplados como na topologia de broker
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-tradeoff-topologia-mediador-2026-09-04_21-49.png)
+
+
+## Capacidades assíncronas
+- característica única em relação aos outros estilos: comunicação assíncrona para o processamento fire-and-forget
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-comunicao-assincrona-versus-sincrona-2026-09-05_15-21.png)
+
+- na imagem acima o processamento assíncrono respondeu em muito rápido, mas diferentemente do processamento síncrono, não garante que um comentário foi postado, somente uma promessa.
+- problema na comunicação assíncrona é o tratamento de erros. O padrão de fluxo de trabalho (event workflow) de arquitetura reativa explica esse problema.
+
+
+## Tratamento de erro
+- o fluxo de trabalho da arquitetura reativa é um modo de lidar com o tratamento de erro num fluxo assíncrono. Ele lida com resiliência e resposta, sabendo tratar os erros sem impactar a resposta.
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-fluxo-trabalho-arquitetura-reativa-2026-09-05_15-39.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-tratamento-erro-evento-fluxo-trabalho-2026-09-05_15-47.png)
+
+
+## Evitando a perda de dados
+- perda de dados é uma preocupação ao lidar com comunicação assíncrona.
+- Quando um processador de eventos A envia uma mensagem de forma assíncrona para um processador B que persiste no banco de dados podem ocorrer 3 áreas de perda:
+- 1. mensagem nunca chega na fila do processador de evento A ou o broker cai antes
+- 2. O processador de eventos B retira a mensagem da fila e trava antes de processar a mensagem
+- 3. O processador de eventos B não consegue persistir no banco de dados
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-erros-perda-dados-arqutetura-orientada-eventos-2026-09-05_15-59.png)
+
+- ACID: atomicidade, consistência, isolamento, durabilidade
+- LPS (Last participant Suport): suporte do último participante
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-evitando-perda-arquitetura-orientada-eventos-2026-09-05_16-07.png)
+
+
+## Capacidade de transmissão
+- uma característica da arquitetura orientada a eventos é transmitir eventos sem o conhecimento de quem recebe ou o que faz com a mensagem.
+- essa capacidade de transmissão é essencial para:
+  - consistência eventual
+  - processamento de eventos complexos
+  - e uma serie de outras situações
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-transmitindo-eventos-para-outros-processadores-2026-09-06_10-53.png)
+
+
+## Requisição-Resposta
+- até o momento trabalhamos com requisições assíncronas que não precisam aguardar uma resposta. Essa é uma característica de comunicação síncrona que na arquitetura orientada a eventos é feita com a mensagem de requisição-resposta.
+- cada canal de evento consiste de duas filas: um de requisição e outra de resposta
+-  a requisição inicial é enviada de modo assíncrono para a fila de requisição, o controle passa para o produtor de mensagens. O produtor faz uma espera bloqueada na fila de respostas. O consumidor recebe e processar, então envia para a fila de respostas. O produtor de eventos recebe a mensagem com os dados.
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-processamento-mensagem-requisicao-resposta-2026-09-07_12-20.png)
+
+- existe duas técnicas básicas para implementar a mensagem de requisição-resposta:
+  - primeira e mais comum é usar o ID de correlação
+  - a seguna é uma fila temporária
+
+### ID de correlação
+- O ID é uma campo na mensagem
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  Sistemas orientados a eventos costumam trabalhar de forma **assíncrona**: o remetente envia uma mensagem e não fica esperando uma resposta imediata para continuar operando. No entanto, em cenários onde uma resposta é necessária (padrão **Requisição-Resposta**), surge o problema: como o produtor saberá qual mensagem na fila de resposta pertence à requisição que ele fez?
+
+  Para resolver isso, usamos dois identificadores em cada mensagem:
+
+  * **ID (Message ID):** É a "certidão de nascimento" ou o código de rastreamento **único** de um envelope de mensagem específico. Toda mensagem nova ganha um ID inédito.
+  * **CID (Correlation ID / ID de Correlação):** É a "etiqueta de referência". Ela serve para ligar a mensagem atual a uma mensagem que existiu anteriormente no sistema.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Na arquitetura orientada a eventos, as filas de resposta podem conter centenas de mensagens destinadas a diferentes partes do sistema. Para garantir que o produtor receba o retorno correto sem ler mensagens alheias, os autores descrevem o padrão de **ID de Correlação**:
+
+  1. **Envio da Requisição (Etapa 1):**
+  * O produtor envia uma nova mensagem para a fila de solicitação com **`ID: 124`**.
+  * Como essa é a mensagem inicial e não responde a nada, a chave de correlação não é necessária (**`CID: NULL`**).
+
+
+  2. **Espera com Seletor (Etapa 2):**
+  * O produtor bloqueia a execução esperando uma resposta específica na fila de resposta.
+  * Ele usa um filtro (ou seletor de mensagem) dizendo: *"Só me entregue uma mensagem cujo `CID` seja igual a `124`"*.
+  * Mensagens com `CID: 120` ou `CID: 122` que já estão na fila são ignoradas, pois pertencem a outras requisições.
+
+
+  3. **Processamento (Etapa 3):**
+  * O consumidor pega a mensagem da fila de solicitação (com `ID: 124`) e executa o trabalho necessário.
+
+
+  4. **Criação da Resposta e a Mudança de ID (Etapas 4 e 5):**
+  * **Por que o ID muda para 857?** Porque a resposta é uma **nova mensagem** criada no sistema. Como toda mensagem nova exige seu próprio identificador único, ela ganha o **`ID: 857`**.
+  * **Por que o 124 vira CID?** O consumidor precisa informar a quem essa resposta pertence. Ele copia o ID da mensagem original (`124`) e o insere no campo de correlação (**`CID: 124`**).
+  * Em termos práticos, a mensagem de resposta diz: *"Eu sou a mensagem número 857, e fui gerada para responder à mensagem número 124"*.
+
+
+  5. **Recebimento da Resposta (Etapa 6):**
+  * A mensagem com `ID: 857` e `CID: 124` chega na fila de resposta.
+  * O seletor do produtor reconhece que o `CID: 124` bate exatamente com a requisição que ele fez e consome a resposta com sucesso.
+
+
+
+  ---
+
+  A chave para entender a mudança de números é perceber que o **ID é do envelope** (cada mensagem tem o seu) e o **CID é o assunto** (o elo que liga o envelope de resposta ao envelope de pergunta).
+</details>
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-processamento-mensagem-requisicao-resposta-id-correlacao-2026-09-07_12-38.png)
+
+### Fila temporária
+- fila temporária para a fila da resposta
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  A técnica da **Fila Temporária** é outra forma de resolver o padrão Requisição-Resposta em arquiteturas orientadas a eventos.
+
+  Em vez de usar uma única fila de resposta compartilhada por todos e filtrar pelo ID de Correlação (CID), o produtor cria um **canal exclusivo e temporário** apenas para receber a resposta daquela requisição específica. É como criar uma caixa de correio privada, usar uma única vez e depois destruí-la.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Nesta abordagem, a dinâmica entre os componentes muda e dispensa a necessidade de seletores de mensagens ou filtros complexos:
+
+  * **Criação do Canal Exclusivo:** O produtor cria uma fila de resposta temporária única no *broker*. Ao enviar a mensagem de solicitação, ele insere no cabeçalho um endereço de retorno (como o atributo `REPLY-TO`).
+  * **Espera Dedicada:** O produtor aguarda a resposta diretamente nessa nova fila temporária. Como ela é privada e exclusiva para essa requisição, **não é necessário filtrar por CID**: qualquer mensagem que cair ali é, com certeza, a resposta esperada.
+  * **Processamento e Resposta:** O consumidor processa o pedido e envia a resposta exatamente para a fila indicada no cabeçalho `REPLY-TO`.
+  * **Limpeza do Recurso:** Assim que o produtor recebe a resposta, a fila temporária é excluída do sistema.
+
+  ---
+
+  ### Qual a diferença para o uso de ID/CID e qual escolher?
+
+  * **Simplicidade vs. Performance:** A fila temporária é mais simples de implementar do ponto de vista de código, pois elimina a lógica de filtros e correlação (`CID`).
+  * **O Trade-off de Engenharia:** Em cenários de alto volume, o ato constante de criar e destruir filas sobrecarrega o *broker* de mensagens, gerando gargalos de desempenho. Por essa razão, a abordagem com **ID de Correlação** em uma fila compartilhada costuma ser a mais recomendada em ambientes de produção de alta escala.
+</details>
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-requisicao-resposta-fila-temporaria-2026-09-07_21-18.png)
+
+
+## Escolhendo entre o modelo baseado em requisição e orientado a eventos
+- requisição-resposta é indicado para requisições orientadas a dados e bem estrtuturados (como recuperar dados do perfil do cliente)
+- orientado a eventos é indicados quando é necessário um alto nível de responsividade e escala, com processamento do usuário complexo e dinâmico
+
+![](./assets/livro-fundamentos-arquitetura/cap-14-tradeoff-modelo-orientado-eventos-2026-09-07_21-21.png)
+
+
+## Arquitetura híbrida orientadas a eventos
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  Uma **Arquitetura Híbrida Orientada a Eventos** ocorre quando não usamos o modelo baseado em eventos isoladamente como a arquitetura principal do sistema, mas sim como um complemento para potencializar outros estilos arquitetônicos.
+
+  Pense nisso como adicionar um motor turbo a um carro comum: você mantém a estrutura base do veículo, mas usa o motor extra para ganhar velocidade, resposta rápida e capacidade de carregar mais peso sem travar o sistema.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Na nossa abordagem em *Fundamentos de Arquitetura de Software*, destacamos que a orientação a eventos atua como um ingrediente versátil que resolve problemas críticos de desempenho e comunicação.
+
+  * **Combinações Comuns:** O estilo orientado a eventos é frequentemente combinado com:
+  * **Microsserviços:** Para comunicação assíncrona e desacoplada entre serviços.
+  * **Arquitetura Baseada em Espaço (*Space-Based*):** Para sincronização e replicação de dados em alta velocidade.
+  * **Outros estilos:** Como arquiteturas de *Microkernel* e *Pipeline*.
+
+
+  * **Principais Benefícios Práticos:**
+  * **Eliminação de Gargalos:** Remove pontos de travamento no sistema ao processar requisições em segundo plano.
+  * **Alta Responsividade:** O usuário recebe confirmações imediatas sem precisar esperar que todo o processamento pesado seja concluído.
+  * **Movimentação de Dados em Massa (*Data Pumps*):** Permite enviar dados de forma rápida e assíncrona para que outro processador atualize o banco de dados sem sobrecarregar a aplicação principal.
+  * **Escalabilidade Programática:** Melhora drasticamente a capacidade de escala da comunicação entre microsserviços e unidades de processamento.
+</details>
+
+
+## Classificações das características da arquitetura
+![](./assets/livro-fundamentos-arquitetura/cap-14-classificacoes-caracteristicas-arquitetura-orientada-eventos-2026-09-08_21-09.png)
+
+
+
+## Resumo
+<details>
+  <summary>Gerado por IA</summary>
+
+  Aqui está o resumo detalhado do **Capítulo 14: Estilo de Arquitetura Orientada a Eventos**, estruturado com base nas suas anotações para o estudo do livro.
+
+  ---
+
+  ### O Conceito em Linhas Gerais
+
+  A **Arquitetura Orientada a Eventos (EDA - Event-Driven Architecture)** é um estilo arquitetônico distribuído, assíncrono e de alto desempenho, focado na reação a acontecimentos (eventos) no sistema.
+
+  * **Diferença de Modelos:**
+  * **Modelo Baseado em Requisição:** Atua de forma síncrona e determinística. O cliente faz um pedido e aguarda o resultado imediato (ex.: usuário consultando seu histórico de compras).
+  * **Modelo Orientado a Eventos:** O sistema reage a determinado estado ou ação para executar tarefas subsequentes (ex.: em um leilão virtual, o sistema reage ao anúncio de um valor, aceita novos lances, compara e determina a maior oferta sem travar a interface do usuário).
+
+
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Mark Richards e Neal Ford detalham este estilo dividindo-o em topologias, capacidades assíncronas, estratégias de integridade e características fundamentais:
+
+  #### 1. Topologias Principais
+
+  ##### Topologia do Broker
+
+  Indicada para fluxos simples de processamento que **não exigem orquestração centralizada** ou coordenação rígida.
+
+  * **Componentes:** *Evento Iniciador*, *Processadores de Eventos* e o *Broker* de mensagens.
+  * **Dinâmica:** Cada processador executa sua tarefa e publica um *evento processado* no broker para que outros interessados reajam.
+  * **Boas Práticas:** Os processadores devem sempre divulgar o que fizeram, mesmo que nenhum componente esteja escutando no momento. Isso facilita a adição de novas funcionalidades no futuro sem alterar o código existente.
+  * **Trade-offs (Desvantagens):**
+  * Não há controle centralizado do fluxo.
+  * O rastreamento do fim de uma transação completa é difícil.
+  * **Tratamento de erros é um grande desafio:** Se uma falha ocorrer no meio do caminho, os outros processadores continuarão avançando sem saber do erro (ex.: remover o item do estoque mesmo se o pagamento falhar).
+
+
+
+  ##### Topologia do Mediador
+
+  Usada quando o sistema requer **controle rígido sobre o fluxo de trabalho**, tratamento de erros centralizado e orquestração.
+
+  * **Componentes:** *Evento Iniciador*, *Fila de Eventos*, *Mediador de Eventos*, *Canais de Mensagem* e *Processadores de Eventos*.
+  * **Dinâmica:** O *mediador* coordena todas as etapas do processo, sabendo exatamente a sequência necessária e enviando comandos aos processadores de eventos.
+  * **Eventos vs. Comandos:** Na topologia broker, trafegam **eventos** (fatos que já aconteceram e podem ser ignorados). Na do mediador, trafegam **comandos** (ações obrigatórias que precisam ser executadas).
+  * **Exemplos de Tecnologia:** Apache Camel e Spring Integration para medições simples; Apache ODE e Oracle BPEL para orquestrações complexas.
+  * **Trade-offs (Desvantagens):**
+  * Dificuldade de modelar processamentos extremamente dinâmicos de forma declarativa.
+  * Maior acoplamento entre o mediador e os passos da transação em relação à topologia broker.
+
+
+
+  ---
+
+  #### 2. Capacidades Assíncronas e Tratamento de Erro
+
+  * **Comunicação Assíncrona (Fire-and-Forget):** Permite respostas extremamente rápidas ao cliente, confirmando o recebimento da solicitação sem esperar a conclusão da tarefa. No entanto, ela **não garante o sucesso da operação**, apenas entrega uma promessa de processamento.
+  * **Tratamento de Erros:** O tratamento de falhas em fluxos assíncronos é um dos aspectos mais complexos. Utiliza-se o padrão de fluxo de trabalho da **arquitetura reativa** para garantir resiliência, permitindo isolating e tratando erros em componentes dedicados sem degradar a resposta ao usuário.
+
+  ---
+
+  #### 3. Evitando a Perda de Dados
+
+  Para evitar a perda de mensagens na comunicação assíncrona até a persistência no banco de dados, é preciso proteger 3 pontos críticos de falha:
+
+  1. **A mensagem não chega na fila do broker** (solução: confirmação de envio/produtor persistente).
+  2. **O processador B retira a mensagem da fila e trava antes de processá-la** (solução: confirmação de leitura / *acknowledgment* somente após o processamento).
+  3. **O processador B falha ao salvar no banco** (solução: controle transacional com suporte a **LPS - Last Participant Support** e propriedades **ACID**).
+
+  ---
+
+  #### 4. Transmissão e Mensageria Requisição-Resposta
+
+  * **Capacidade de Transmissão (Broadcasting):** Permite emitir eventos sem saber quem são os consumidores ou o que farão com eles. É a base para **consistência eventual** e **processamento de eventos complexos (CEP)**.
+  * **Padrão Requisição-Resposta:** Usado quando a arquitetura orientada a eventos precisa simular uma comunicação síncrona. Consiste na utilização de dois canais (Fila de Requisição e Fila de Resposta):
+  * **ID de Correlação:** A mensagem de requisição possui um ID. Ao responder, a mensagem ganha seu próprio ID único e insere o ID original no campo `CID` (Correlation ID). O produtor usa um filtro para pegar apenas as respostas com o `CID` correspondente.
+  * **Fila Temporária:** O produtor cria um canal de resposta exclusivo e temporário para aquela requisição (passado via cabeçalho `REPLY-TO`). O consumidor responde diretamente nele e a fila é destruída em seguida. (Obs.: A criação excessiva de filas temporárias pode sobrecarregar o broker).
+
+
+
+  ---
+
+  #### 5. Escolha do Modelo e Arquiteturas Híbridas
+
+  * **Quando escolher:**
+  * **Baseado em Requisição:** Ideal para consultas de dados bem estruturadas e diretas (ex.: recuperar o perfil do cliente).
+  * **Orientado a Eventos:** Ideal para cenários que exigem alta escala, responsividade e fluxos dinâmicos/complexos.
+
+
+  * **Arquiteturas Híbridas:** É comum combinar a orientação a eventos com outros estilos (como Microsserviços e *Space-Based*) para remover gargalos de I/O, atuar como *Data Pumps* (movimentação assíncrona de dados) e aumentar a escalabilidade geral da solução.
+
+  ---
+
+  ### Classificação das Características Arquiteturais
+
+  Abaixo está o resumo do comportamento deste estilo quanto às características de qualidade (*-idades*):
+
+  | Característica | Classificação / Nível | Explicação |
+  | --- | --- | --- |
+  | **Desempenho (Performance)** | **Alto (5/5)** | Comunicação assíncrona e processamento paralelo eliminam gargalos de espera. |
+  | **Escalabilidade** | **Alta (5/5)** | Processadores de eventos podem ser escalados independentemente conforme a carga das filas. |
+  | **Fault Tolerance (Tolerância a Falhas)** | **Alta (5/5)** | O desacoplamento permite que partes do sistema continuem operando mesmo se um processador falhar. |
+  | **Simplicidade e Testabilidade** | **Baixa (1/5)** | A natureza assíncrona, não determinística e o rastreamento de erros tornam os testes e o desenvolvimento complexos. |
+  | **Evolutividade** | **Alta (5/5)** | Novos componentes podem ser adicionados para escutar eventos sem impactar os existentes. |
+</details>
+
