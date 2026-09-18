@@ -2754,3 +2754,505 @@ Pontos negativos na topologia do mediador:
   | **Evolutividade** | **Alta (5/5)** | Novos componentes podem ser adicionados para escutar eventos sem impactar os existentes. |
 </details>
 
+
+
+
+
+# Capítulo 15: Estilo de Arquitetura Baseada em Espaço
+- na topologia tradicional onde temos servidor web, servidor de aplicação e servidor de banco de dados temos um problema quando ocorre um crescimento na quantidade de usuários simultâneos. O servidor de banco de dados será o fator limite final e difícil ao realizar uma escala horizontal.
+
+![](./assets/livro-fundamentos-arquitetura/cap-15-limites-escalabilidade-topologia-tradicional-web-2026-09-10_21-34.png)
+
+A arquitetura baseada em espaço resolve esse problema para lidar com alta escalabilidade, elasticidade e a alta simultaneidade. Também é usada para volume de usuários variáveis e imprevisíveis. Resolver o problema da escalabilidade extrema e variável de modo arquitetural normalmente é uma abordagem melhor do que tentar escalar na horizontal um banco de dados e adaptar as tecnologias de cache em uma arquitetura não escalável.
+
+
+## Topologia geral
+- nome baseado no conceito de espaço de tuplas. Técnica de usar vários processadores paralelos se comunicando pela memória compartilhada.
+- unidade de processamento
+- Middleware Virtualizado
+- Data Pumps
+- Gravação de dados
+- Leitura de dados
+
+![](./assets/livro-fundamentos-arquitetura/cap-15-topologia-basica-arquitetura-baseada-espaco.png)
+
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  A **Arquitetura Baseada em Espaço** (*Space-Based Architecture*) foi projetada para resolver o maior gargalo da maioria das aplicações: **o banco de dados central**.
+
+  Em sistemas tradicionais, quando milhares de pessoas acessam o sistema ao mesmo tempo, a aplicação consegue escalar criando mais servidores, mas o banco de dados central fica sobrecarregado por não conseguir processar tantas leituras e escritas simultâneas.
+
+  Neste padrão, os dados não ficam armazenados primariamente no banco de dados durante o uso, mas sim **diretamente na memória RAM** dos próprios servidores de aplicação. Sem precisar consultar o banco a todo momento, o sistema atinge um nível baixíssimo de latência e alta capacidade de escalabilidade.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Os autores dividem essa arquitetura em componentes bem definidos para garantir que as requisições sejam processadas na memória e, só depois, sincronizadas com o banco de dados.
+
+  O fluxo de funcionamento acontece da seguinte forma:
+
+  * **Unidades de Processamento (*Processing Units*):** São as instâncias da sua aplicação que contêm o código e uma cópia dos dados na memória RAM (*in-memory data grid*). Quando uma requisição chega, ela é processada inteiramente na memória.
+  * **Middleware Virtualizado:** Gerencia as instâncias. Ele coordena o balanceamento de carga e garante a replicação dos dados entre as memórias de cada unidade de processamento ativas.
+  * **Persistência Assíncrona (*Data Pumps* e *Data Writers*):** Quando ocorre uma gravação ou alteração de dados na memória, a unidade de processamento **não** trava esperando o banco de dados responder. Em vez disso, ela envia essa alteração de forma assíncrona usando filas (*Data Pumps*) para um componente que efetivamente grava no banco (*Data Writers*).
+  * **Inicialização (*Data Readers*):** Ao subir uma nova unidade de processamento, o componente de leitura (*Data Reader*) busca os dados necessários no banco para carregar a memória RAM inicial daquela unidade.
+</details>
+
+
+## Unidade de processsamento
+- contém a lógica do aplicativo
+- pode conter serviços pequenos com finalidade única (como microsserviços)
+- contém uma grade de dados em memória e um mecanismo de replicação normalmente implementado por plataformas como Hazelcast, Apache Ignite e Oracle Coherence.
+
+![](./assets/livro-fundamentos-arquitetura/cap-15-unidade-processamento-2026-09-11_21-26.png)
+
+
+## Middleware virtualizado
+- lida com problemas de infraestrutura e conhtralam vários aspectos da sincronização de dados e do tratamento de requisição.
+O components incluem:
+- grades de mensagerias
+- de dados
+- de processamento
+- e um gerenciador de implementação
+
+### Grade de mensageria
+- gerencia a requisição de entrada e o estado da sessão
+- determina os componentes de processamento ativos disponível para enviar para uma unidade de processamento
+- é implementado por um servidor web típico com equilibrio de carga como HA Proxy e Nginx.
+
+![](./assets/livro-fundamentos-arquitetura/cap-15-grade-mensageria-2026-09-13_13-39.png)
+
+
+### Grade de dados
+- O componente da grade de dados talvez seja o mais importante e essencial nesse estilo de arquitetura.
+- nas implementações modernas, a grade de dados é implementada na unidade de processamento como cache replicado. O cache replicado requer um controlador externo ou um cache distribuído dentro da unidade de processamento e no componente da grade de dados
+
+![](./assets/livro-fundamentos-arquitetura/cap-15-grade-dados-2026-09-13_13-57.png)
+
+- dados são sincronizados entre unidades de processamento
+```java
+HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+Map<String, CustomerProfile> profileCache =
+    hz.getReplicatedMap("CustomerProfile");
+```
+
+```text
+// 1. Apenas uma instância iniciada
+Instance 1:
+Members {size:1, ver:1} [
+    Member [172.19.248.89]:5701 - 04a6f863-dfce-41e5-9d51-9f4e356ef268 this
+]
+
+// 2. Segunda instância entra na rede
+Instance 1:
+Members {size:2, ver:2} [
+    Member [172.19.248.89]:5701 - 04a6f863-dfce-41e5-9d51-9f4e356ef268 this
+    Member [172.19.248.90]:5702 - ea9e4dd5-5cb3-4b27-8fe8-db5cc62c7316
+]
+
+// 3. Terceira instância adicionada
+Instance 1:
+Members {size:3, ver:3} [
+    Member [172.19.248.89]:5701 - 04a6f863-dfce-41e5-9d51-9f4e356ef268 this
+    Member [172.19.248.90]:5702 - ea9e4dd5-5cb3-4b27-8fe8-db5cc62c7316
+    Member [172.19.248.91]:5703 - 1623eadf-9cfb-4b83-9983-d80520cef753
+]
+
+// 4. Instância 2 fica inativa (remoção automática)
+Instance 1:
+Members {size:2, ver:4} [
+    Member [172.19.248.89]:5701 - 04a6f863-dfce-41e5-9d51-9f4e356ef268 this
+    Member [172.19.248.91]:5703 - 1623eadf-9cfb-4b83-9983-d80520cef753
+]
+```
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ---
+
+  ### O Conceito em Linhas Gerais
+
+  Imagine que você tem vários servidores rodando a mesma aplicação para aguentar um grande volume de acessos. Se todos esses servidores precisarem consultar o banco de dados principal a cada segundo, o sistema vai travar.
+
+  A **Grade de Dados** (ou *Data Grid*) resolve isso criando um **cache distribuído em memória** compartilhado entre todos os servidores. Em vez de ir ao banco de dados, cada unidade de processamento consulta e atualiza os dados diretamente da sua própria memória. Quando um servidor altera um dado, ele avisa os outros rapidamente em segundo plano para que todos fiquem sincronizados.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Na **Arquitetura Baseada em Espaço** (*Space-Based Architecture*), a Grade de Dados é um dos pilares do **Middleware Virtualizado**. O objetivo principal dela é eliminar o gargalo do banco de dados centralizado através da **replicação em memória**.
+
+  #### Como os dados se mantêm atualizados durante o fluxo:
+
+  * **1. Descoberta Automática de Membros (Lista de Membros)**
+  * Cada unidade de processamento mantém internamente uma **lista de membros** ativos (com IP e porta).
+  * Sempre que uma nova instância do serviço entra no ar ou é desligada, todas as outras instâncias atualizam automaticamente suas listas para saber com quem devem conversar.
+
+
+  * **2. Carregamento Inicial (*Bootstrap* Sem Banco de Dados)**
+  * Quando uma nova instância é inicializada, ela **não precisa ir até o banco de dados** relacional para carregar as informações.
+  * Ela se conecta à rede da grade de dados, descobre as outras instâncias ativas e **solicita o cache nomeado diretamente de um nó vizinho**.
+
+
+  * **3. Atualização e Replicação Assíncrona**
+  * Quando uma requisição chega na **Instância A** e altera uma informação (por exemplo, atualiza o perfil de um cliente via código com um método de atualização de cache):
+  1. A **Instância A** grava a alteração em sua memória local.
+  2. A Grade de Dados assume o papel de **propagar essa mudança de forma assíncrona** para todas as outras instâncias registradas na lista de membros.
+  3. Em milissegundos, as **Instâncias B e C** recebem e aplicam a atualização sem bloquear a resposta da requisição original.
+
+
+
+
+  * **4. Resiliência e Remoção Dinâmica**
+  * Se a **Instância B** cair ou for desligada, a lista de membros em **A** e **C** é atualizada para remover a **Instância B**.
+  * O sistema continua operando normalmente e com os dados em dia, contanto que exista **pelo menos uma instância ativa** mantendo o cache em memória.
+</details>
+
+### Grade de processamento
+- é opcional no middleware virtualizado que gerencia o processamento da requisição orquestrada
+![](./assets/livro-fundamentos-arquitetura/cap-15-grade-processamento-2026-09-14_21-11.png)
+
+
+### Gerenciador de implementação
+- controla a inicialização e finalização dinâmicas das instâncias da unidade de processamento
+- monitora os tempos de respostas e carga de usuários, iniciando unidades de processamento e finalizando quando a carga diminui
+
+
+
+## Data pumps
+![](./assets/livro-fundamentos-arquitetura/cap-15-data-pump-bd-2026-09-14_21-24.png)
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  **O Conceito em Linhas Gerais**
+
+  O **Data Pump** é um mecanismo de sincronização assíncrona encarregado de pegar as alterações de dados realizadas na memória e persisti-las em um banco de dados físico.
+
+  Na Arquitetura Baseada em Espaço (*Space-Based Architecture*), o sistema não consulta nem grava informações diretamente no banco de dados para garantir alta performance e escalabilidade. Em vez disso, todas as operações ocorrem em memória (*in-memory data grid*). O *Data Pump* atua em segundo plano como a "bomba" que extrai essas atualizações da memória e as entrega com segurança ao banco de dados relacional ou não relacional, sem interromper o fluxo da aplicação.
+
+  ---
+
+  **A Visão dos Autores (Richards & Ford)**
+
+  Na obra, enfatizamos o *Data Pump* como um componente essencial e indispensável para a sustentabilidade da persistência nessa arquitetura. Os principais aspectos destacados incluem:
+
+  * **Consistência Eventual e Assincronismo**: A comunicação do *Data Pump* é sempre assíncrona. A aplicação atualiza a memória e responde imediatamente ao usuário; o banco de dados é atualizado um pouco depois. Isso estabelece um modelo de **consistência eventual** entre o cache e a base de dados.
+  * **Propriedade da Atualização**: Quando uma instância de unidade de processamento (*Processing Unit*) recebe uma requisição e atualiza seu cache local, ela assume a responsabilidade (*ownership*) sobre essa alteração e se encarrega de enviá-la ao *Data Pump*.
+  * **Uso de Mensageria e Desacoplamento**: A forma mais comum e recomendada de implementar *Data Pumps* é por meio de sistemas de mensageria (filas FIFO). Essa abordagem oferece:
+  * **Entrega Garantida e Ordem**: Preserva a sequência correta em que as alterações ocorreram.
+  * **Tolerância a Falhas**: Se o banco de dados ficar indisponível ou lento, as unidades de processamento continuam operando normalmente, acumulando as mensagens na fila até que a gravação seja restabelecida.
+
+
+  * **Especialização por Domínio**: Dificilmente utiliza-se um único *Data Pump* para todo o sistema. A arquitetura preconiza múltiplos *Data Pumps* segmentados por domínio, subdomínio ou tipo de cache (por exemplo, um *Data Pump* dedicado a `Clientes` e outro a `Inventário`).
+  * **Contratos Leves de Dados**: Os *Data Pumps* operam sob contratos definidos (como esquemas JSON, XML ou pares chave-valor) que contêm o tipo de ação (*adicionar*, *atualizar* ou *excluir*). Para otimizar o uso da rede, as mensagens de atualização carregam apenas o delta das alterações (por exemplo, apenas o novo número de telefone, o ID do cliente e a instrução de atualização, em vez de todo o perfil do cliente).
+</details>
+
+
+## Gravação de dados
+- aceita mensagens de uma data pump e atualiza o banco de dados com a informações contidas
+![](./assets/livro-fundamentos-arquitetura/cap-15-gravacao-dados-baseada-dominio-2026-09-14_21-42.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-15-gravacao-dados-dedicada-cada-data-pump-2026-09-14_21-45.png)
+
+
+## Leitura de dados
+- lê os dados no banco de dados e envia para unidades de processamento via data pump reverso
+- Na arquitetura baseada em espaço, as leituras de dados são chamadas apenas em uma dessas três situações: uma paralisação de todas as instâncias da unidade de processamento do mesmo cache nomeado, uma reimplementação de todas as unidades no mesmo cache nomeado ou ao recuperar os dados de armazenamento não contidos no cache replicado.
+![](./assets/livro-fundamentos-arquitetura/cap-15-leitura-dados-data-pump-reverso-2026-09-14_21-51.png)
+
+
+## Colisões de dados
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  Uma **colisão de dados** ocorre quando duas ou mais instâncias de um serviço tentam atualizar a mesma informação no cache ao mesmo tempo (ou quase ao mesmo tempo).
+
+  Em arquiteturas que usam cache replicado (onde cada serviço mantém uma cópia do cache e sincroniza com os outros), existe um pequeno atraso (latência) para que uma alteração em um local chegue aos demais. Se ambos os lados alterarem o mesmo dado durante essa janela de tempo, as atualizações cruzadas vão se sobrescrever, deixando o sistema com dados desatualizados e fora de sincronia.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Analisamos o problema das colisões de dados avaliando as variáveis de engenharia que determinam sua probabilidade e viabilidade técnica:
+
+  * **O Problema da Latência de Replicação**: Quando o Serviço A altera um registro e o Serviço B altera o mesmo registro antes de receber a atualização de A, ambas as instâncias sobrescrevem as alterações uma da outra, gerando um estado inconsistente.
+  * **Fatores que Aumentam ou Diminuem as Colisões**:
+  * **Número de Instâncias ($N$)**: Quanto mais instâncias compartilhando o mesmo cache, maior a chance de colisão.
+  * **Taxa de Atualização ($UR$)**: Quanto mais frequentes forem as modificações no cache, mais colisões ocorrerão.
+  * **Latência de Replicação ($RL$)**: Quanto mais tempo a rede demora para propagar os dados entre as instâncias, maior é a janela de risco.
+  * **Tamanho do Cache ($S$)**: É o único fator **inversamente proporcional**. Caches menores concentram mais atualizações nos mesmos itens, aumentando dramaticamente a taxa de colisões. Caches maiores distribuem as alterações em mais registros, reduzindo o risco.
+
+
+  * **Tomada de Decisão com Base em Cálculos**:
+  * Recomendamos calcular a probabilidade de colisões para avaliar se o uso de cache replicado é seguro para o seu cenário.
+  * Como a carga de uso varia ao longo do tempo, é indispensável calcular a taxa de colisão considerando os cenários de **mínimo, normal e pico de uso** da aplicação.
+</details>
+
+
+## Implementações na nuvem versus locais
+![](./assets/livro-fundamentos-arquitetura/cap-15-topologia-hibrida-bseado-nuvem-e-local-2026-09-15_21-21.png)
+
+
+## Cache replicado versus distribuído
+- ao remover as leituras e escritas diretas no banco de dados possibilita uma arquitetura com alta escalabilidade, elasticidade e desempenho.
+
+![](./assets/livro-fundamentos-arquitetura/cap-15-cache-replicado-unidade-processamento-2026-09-15_21-27.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-15-cache-distribuido-unidade-processamento-2026-09-15_21-35.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-15-criterio-decisao-cache-distribuido-versus-replicado-2026-09-15_21-44.png)
+
+<details>
+  <summary>Gerado por IA</summary>
+  O trade-off entre **Cache Replicado** e **Cache Distribuído** é um tópico fundamental na Arquitetura Baseada em Espaço (*Space-Based Architecture*).
+
+  ---
+
+  **O Conceito em Linhas Gerais**
+
+  Em sistemas de altíssimo desempenho, ler e escrever diretamente em um banco de dados relacional cria gargalos. Para evitar isso, a arquitetura baseada em espaço guarda os dados temporariamente em memória (*cache*). O dilema do arquiteto surge ao decidir **onde** esse cache deve morar:
+
+  * **Cache Replicado:** Cada nó da aplicação guarda uma cópia completa (ou parcial) dos dados na sua própria memória local. Quando um nó altera algo, ele avisa os outros nós para atualizarem suas próprias cópias.
+  * **Cache Distribuído:** Os dados ficam armazenados em um servidor externo e centralizado de cache (como um cluster Redis/Memcached). Todos os nós da aplicação consultam essa mesma fonte centralizada via rede.
+
+  ---
+
+  **A Visão dos Autores (Richards & Ford)**
+
+  Nós enfatizamos que não existe escolha perfeita, apenas **trade-offs** (trocas arquiteturais). A decisão se resume ao equilíbrio entre **desempenho**, **tolerância a falhas** e **consistência de dados**.
+
+  * **Funcionamento do Cache Replicado:**
+  * **Mecanismo:** Os dados ficam dentro da memória da própria Unidade de Processamento (*in-memory*). A sincronização entre as instâncias ocorre de forma assíncrona por bibliotecas internas.
+  * **Vantagens:** Altíssimo desempenho e baixíssima latência (a leitura é local, sem chamadas de rede). Excelente tolerância a falhas, pois não há um ponto único de falha (*Single Point of Failure*).
+  * **Desvantagens/Limitações:** Exige muita memória RAM de cada nó. Se o volume de dados for grande (acima de 100MB) ou se a taxa de escrita for muito alta, a sincronização constante causará colisões de dados e gargalos de rede entre os nós.
+
+
+  * **Funcionamento do Cache Distribuído:**
+  * **Mecanismo:** A aplicação não guarda os dados internamente; ela faz requisições síncronas a um serviço externo centralizado.
+  * **Vantagens:** Alta consistência dos dados, já que todos leem e escrevem exatamente no mesmo lugar. Funciona muito bem para grandes volumes de dados (acima de 500MB) e altas taxas de atualização.
+  * **Desvantagens/Limitações:** Menor desempenho comparado ao replicado por causa do salto de rede (*network hop*). Apresenta menor tolerância a falhas se o servidor de cache central ficar indisponível.
+
+
+  * **Matriz de Decisão dos Autores:**
+
+  | Critério de Decisão | Cache Replicado | Cache Distribuído |
+  | --- | --- | --- |
+  | **Foco de Otimização** | Desempenho e Velocidade | Consistência de Dados |
+  | **Tamanho do Cache** | Pequeno (< 100MB) | Grande (> 500MB) |
+  | **Tipo de Dado** | Estático / Pouca alteração | Dinâmico / Alteração frequente |
+  | **Frequência de Atualização** | Baixa | Alta |
+  | **Tolerância a Falhas** | Alta | Baixa |
+
+  * **A Recomendação Prática:**
+  Você não precisa escolher apenas um modelo para o sistema inteiro. A melhor abordagem é aplicar o padrão ideal para cada contexto de negócio dentro da mesma aplicação. Use **cache distribuído** para dados críticos e altamente mutáveis (ex: estoque de produtos) e **cache replicado** para dados de leitura rápida e pouca alteração (ex: perfis de usuários ou tabelas de referência).
+</details>
+
+
+
+## Observações sobre o near-cache
+Near-cache é um tipo de modelo híbrido de cache ligando as grades de dados em memória e um cache distribuído.
+- full backing: cache distribuído
+- front cache: in memory na grade de dados da unidade de processamento
+
+![](./assets/livro-fundamentos-arquitetura/cap-15-topologia-near-cache-2026-09-15_22-02.png)
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  **O Conceito em Linhas Gerais**
+
+  O **Near-Cache** é uma abordagem híbrida de armazenamento em memória. Em vez de escolher estritamente entre manter os dados dentro da aplicação ou em um servidor separado, ele tenta combinar ambos:
+
+  * **Front Cache:** Uma pequena fração de memória local mantida dentro de cada unidade de processamento para acesso imediato.
+  * **Full Backing Cache:** Um servidor de cache centralizado e distribuído que armazena a totalidade dos dados.
+
+  ---
+
+  **A Visão dos Autores (Richards & Ford)**
+
+  Embora pareça uma boa solução de meio-termo, nós **não recomendamos** o uso do Near-Cache em uma Arquitetura Baseada em Espaço devido aos trade-offs envolvidos na prática.
+
+  * **Gerenciamento do Front Cache:** Como a memória local é limitada, o *front cache* guarda apenas um subconjunto dos dados e precisa de uma política de remoção para descartar itens antigos. As principais políticas são:
+  * **MRU (*Most Recently Used*):** Mantém os dados acessados mais recentemente.
+  * **MFU (*Most Frequently Used*):** Mantém os dados acessados com maior frequência.
+  * **RR (*Random Replacement*):** Libera espaço descartando itens aleatoriamente, útil quando não há um padrão claro de acesso.
+
+
+  * **O Problema da Inconsistência:** O ponto crítico é que cada unidade de processamento sincroniza seu *front cache* individualmente com o servidor central, mas **não sincroniza com as outras unidades**.
+  * **A Conclusão do Livro:** Essa falta de sincronia entre os nós faz com que diferentes instâncias da aplicação possuam dados e desempenhos discrepantes ao atender requisições semelhantes. Essa variação imprevisível invalida os ganhos de consistência e estabilidade esperados para esse estilo de arquitetura.
+</details>
+
+
+## Exemplos de implementação
+- adequada para altos picos de usuários ou requisições e aplicativos com taxa de transferência acima de 10 mil usuários simultâneos
+- requer desempenho, escalabilidade e níveis de elasticidade altos
+- Exemplos:
+  - sistemas de ingressos para concertos online
+  - sistema de leilão online
+
+
+### Sistema de ingressos para concertos
+- o pico somente ocorre quando os ingressos são colocados à venda e o restante do tempo é relativamente baixo
+- ideal para uma arquitetura baseada em espaços onde o gerenciador de implementação inicia um grande número de unidade de processamento
+
+
+### Sistem ade leilão online
+- quando um leilão inicia, não como determinar a quantidade de pessoas e quantos lances ocorrerão.
+
+
+
+## Classificações das características da arquitetura
+![](./assets/livro-fundamentos-arquitetura/cap-15-classificacoes-caracteristicas-arq-baseada-espacos-2026-09-16_21-21.png)
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  A Arquitetura Baseada em Espaço (*Space-Based Architecture*) foi projetada para resolver problemas de concorrência extrema e gargalos de banco de dados, permitindo processar volumes massivos de acessos simultâneos.
+
+  ---
+
+  **O Conceito em Linhas Gerais**
+
+  Em sistemas tradicionais, quando milhões de usuários tentam acessar a aplicação ao mesmo tempo, o banco de dados central se torna o principal gargalo. A Arquitetura Baseada em Espaço resolve isso removendo o banco de dados do fluxo direto de transações:
+
+  * **Dados em Memória:** Os dados ativos ficam armazenados na memória RAM de várias instâncias (*grid* de memória distribuída).
+  * **Escala Rápida:** As unidades de processamento podem ser duplicadas ou destruídas dinamicamente conforme a demanda varia.
+  * **Persistência Assíncrona:** A gravação no banco de dados definitivo ocorre em segundo plano, sem travar as requisições dos usuários.
+
+  ---
+
+  **A Visão dos Autores (Richards & Ford)**
+
+  Na análise de trade-offs do livro, os autores destacam onde este estilo se destaca e onde reside a sua maior complexidade:
+
+  * **Forças Principais (Atributos Condutores):**
+  * **Elasticidade e Escalabilidade:** Excelente capacidade de responder a picos imprevistos de tráfego, expandindo e reduzindo recursos conforme necessário.
+  * **Desempenho:** Respostas extremamente rápidas por trabalhar diretamente com dados em memória, sem a latência de consultas lentas a um banco relacional.
+
+
+  * **Trade-offs e Desafios:**
+  * **Baixa Simplicidade e Testabilidade:** É um estilo muito complexo devido à gestão de consistência eventual dos dados e à sincronização do cache em memória com o banco de dados principal. Testar cenários de carga extrema exige simular milhares de acessos concorrentes, o que muitas vezes só é viável em produção.
+  * **Custo Elevado:** Exige alto consumo de recursos de memória e licenças de ferramentas de data grid/cache distribuído.
+  * **Particionamento Misto:** Combina divisões por domínio (serviços funcionais flexíveis) e técnicas (separação clara entre processamento em memória, sincronizadores e banco de dados).
+  * **Quanta Arquitetural:** Varia de 1 a muitos, sendo delimitado principalmente pelas interfaces de usuário (UIs) e pelas unidades de processamento que se comunicam de forma síncrona.
+</details>
+
+
+## Resumo
+<details>
+  <summary>Gerado por IA</summary>
+
+  Aqui está um resumo bem detalhado do **Capítulo 15: Estilo de Arquitetura Baseada em Espaço**, estruturado para consulta e estudo rápido conforme as anotações apresentadas.
+
+  ---
+
+  # Capítulo 15: Estilo de Arquitetura Baseada em Espaço
+
+  ### O Conceito em Linhas Gerais
+
+  A **Arquitetura Baseada em Espaço** (*Space-Based Architecture*) foi projetada para resolver o gargalo da topologia tradicional (Servidor Web $\rightarrow$ Servidor de Aplicação $\rightarrow$ Servidor de Banco de Dados), onde a base de dados central inviabiliza a escala horizontal sob alta simultaneidade.
+
+  A solução consiste em eliminar o banco de dados do caminho direto das transações, mantendo os dados ativos armazenados **em memória RAM** (*in-memory data grid*) distribuída entre os próprios nós da aplicação. Com isso, o sistema atinge baixíssima latência, além de altíssima escalabilidade e elasticidade para lidar com fluxos imprevisíveis de acessos.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  #### 1. Topologia Geral
+
+  O nome deriva do conceito de *espaço de tuplas* (processadores paralelos comunicando-se por memória compartilhada). É composta pelos seguintes componentes:
+
+  * **Unidades de Processamento (*Processing Units*):**
+  * Contêm a lógica do aplicativo (podem ser serviços pequenos com finalidade única).
+  * Incluem a grade de dados em memória e mecanismos de replicação (via soluções como Hazelcast, Apache Ignite ou Oracle Coherence).
+
+
+  * **Middleware Virtualizado:**
+  * Lida com infraestrutura, sincronização de dados e tratamento de requisições.
+  * **Grade de Mensageria (*Messaging Grid*):** Gerencia requisições de entrada, estado de sessão e determina a unidade ativa para envio do tráfego. Implementada por balanceadores de carga como HAProxy ou Nginx.
+  * **Grade de Dados (*Data Grid*):** Componente essencial. Atua como um cache replicado em memória dentro da unidade de processamento para manter os dados sincronizados entre os nós dinamicamente (com listas de membros ativos, atualização assíncrona e remoção/adicição automática de instâncias).
+  * **Grade de Processamento (*Processing Grid*):** Opcional; gerencia o processamento da requisição quando há orquestração entre serviços.
+  * **Gerenciador de Implementação (*Deployment Manager*):** Monitora tempos de resposta e carga para instanciar ou encerrar Unidades de Processamento dinamicamente.
+
+
+  * **Data Pumps:**
+  * Mecanismo de sincronização assíncrona (usualmente com filas FIFO) que extrai atualizações da memória e as envia para o banco de dados sem travar a aplicação (consistência eventual).
+  * É especializado por domínios/subdomínios e transmite apenas o *delta* da alteração.
+
+
+  * **Gravação de Dados (*Data Writers*):**
+  * Consomem as mensagens dos *Data Pumps* e executam as atualizações físicas na base de dados.
+
+
+  * **Leitura de Dados (*Data Readers*):**
+  * Recuperam dados da base persistente para alimentar a memória (via *data pump* reverso) estritamente em 3 cenários:
+  1. Parada total das instâncias de um determinado cache nomeado;
+  2. Reimplementação de todas as unidades daquele cache;
+  3. Consulta de dados não contidos no cache replicado.
+
+
+
+
+
+  ---
+
+  #### 2. Colisões de Dados
+
+  Ocorre quando duas instâncias tentam alterar o mesmo dado no cache em memória quase ao mesmo tempo, dentro da janela de tempo da latência de replicação.
+
+  * **Fatores de Influência:**
+  * **Aumentam a chance de colisão:** Número de instâncias ($N$), taxa de atualização ($UR$) e latência de replicação ($RL$).
+  * **Diminuem a chance de colisão:** Tamanho do cache ($S$) — um cache maior distribui melhor as edições e reduz os riscos.
+
+
+  * **Recomendação:** Avaliar probabilidade de colisões calculando cenários de **mínimo, normal e pico de uso**.
+
+  ---
+
+  #### 3. Topologias e Decisões de Cache
+
+  ##### Cache Replicado vs. Distribuído
+
+  * **Cache Replicado:** Foco em desempenho e tolerância a falhas. Cada nó possui sua cópia completa/parcial da memória. Indicado para volumes pequenos (< 100MB), dados estáticos e baixas taxas de atualização.
+  * **Cache Distribuído:** Foco em consistência de dados. Os dados ficam em um cluster externo (ex: Redis). Indicado para grandes volumes (> 500MB) e dados altamente dinâmicos, assumindo o custo do salto de rede (*network hop*).
+
+  | Critério de Decisão | Cache Replicado | Cache Distribuído |
+  | --- | --- | --- |
+  | **Foco de Otimização** | Desempenho / Velocidade | Consistência de Dados |
+  | **Tamanho do Cache** | Pequeno (< 100MB) | Grande (> 500MB) |
+  | **Tipo de Dado** | Estático / Leitura rápida | Dinâmico / Alteração frequente |
+  | **Frequência de Atualização** | Baixa | Alta |
+  | **Tolerância a Falhas** | Alta | Baixa |
+
+  ##### Observações sobre Near-Cache
+
+  * Modelo híbrido (*Front Cache* em memória local + *Full Backing Cache* distribuído).
+  * **Posição dos Autores:** **Não recomendado** nesta arquitetura. O fato de cada *front cache* sincronizar apenas com o servidor central (e não entre si) gera inconsistências e comportamentos discrepantes de desempenho entre as instâncias da aplicação.
+
+  ---
+
+  #### 4. Casos de Uso Ideal
+
+  Adequada para sistemas que exigem altíssimo desempenho, elasticidade e alta concorrência (> 10 mil usuários simultâneos) com volumes imprevisíveis:
+
+  * **Venda de ingressos para shows/eventos:** Picos concentrados no momento do lançamento das vendas.
+  * **Sistemas de leilão online:** Volume e taxa de lances totalmente imprevisíveis a cada novo item disponibilizado.
+
+  ---
+
+  #### 5. Classificação das Características
+
+  * **Pontos Fortes (Atributos Condutores):** Escalabilidade, Elasticidade e Desempenho.
+  * **Desafios / Trade-offs:** Baixa Simplicidade, Baixa Testabilidade (exige testes complexos de carga) e Custo Elevado (alto consumo de memória RAM e infraestrutura).
+  * **Particionamento:** Misto (separação técnica dos componentes de dados e separação funcional por domínios).
+  * **Quanta Arquitetural:** De 1 a muitos (delimitado pelas interfaces e comunicação síncrona).
+</details>
+
