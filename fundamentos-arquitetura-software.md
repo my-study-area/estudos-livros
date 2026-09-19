@@ -6,6 +6,10 @@ Escrito por Mark Richards e Neal Ford
 https://www.youtube.com/@markrichards5014
 
 
+# Links compartilhados no discord do leitura dev
+- https://schweitzer.ai/blog/modularidade-arquitetura-software
+
+
 
 # Capítulo 1 : Introdução
 Citação de Martin Fowler sobre a definição da profissão de arquiteto de software:
