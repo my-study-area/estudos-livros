@@ -3260,3 +3260,128 @@ Near-cache é um tipo de modelo híbrido de cache ligando as grades de dados em 
   * **Quanta Arquitetural:** De 1 a muitos (delimitado pelas interfaces e comunicação síncrona).
 </details>
 
+
+# Capítulo 16: Arquitetura orientada a serviços e baseada em orquestração
+
+## História e filosofia
+- no final dos anos 1990, empresa se fundiram com empresas e necessitaram de um TI mais sofisticada e precisaram de uma escalabilidade variável e outras características
+- estímulos externos como uso de sistemas operacionais licenciados, assim como no banco de dados e servidores de aplicativos fez com que os arquitetos seguirem com arquiteturas distribuídas e reutilizar o máximo possível
+
+
+## Topologia
+![](./assets/livro-fundamentos-arquitetura/cap-16-topologia-arquitetura-orientada-servicos-baseada-orquestracao-2026-09-17_21-55.png)
+
+
+## Taxonomia
+- filosofia gira em torno da reutilização no nível da empresa
+- empresas se aborreciam com a quantidade de vezes que tinha que reescrever e atacaram com a estratégia de resolver aos poucos
+
+
+## Serviço de negócio
+- representam o comportamento do domínio: ExecuteTrade ou PlaceOrder
+- serviço de negócio: definida por usuário comerciais
+
+
+## Serviços corporativos
+- Serviços corporativo são implementação menores como CreateCustomer num domíno de Customer
+- Se criados com a granulidade correta, não será necessário reescrever partes do fluxo novamente.
+- Mercado, mudança na técnologia, pŕaticas de engenharia atrapalham as tentativas de impor estabilidade
+
+
+## Serviços de aplicativos
+- Os serviços do aplicativo são serviços únicos com uma implementação
+- Ex: um serviço de geolocalização que não entende-se como um esforço para disponibilizar para a organização que fica especializado para um aplicativo
+
+
+## Serviço de infraestrutura
+- Serviços de infraestrutura fornecem questões operacionais, como monitoramento, gerenciamento de logs, autenticaçao e autorização
+- pertence a uma equipe de infraestrutura compartilhada com profissionais DevOps
+
+
+## Mecanismo de orquestração
+- é o centro da arquitetura distribuída, unindo serviço de negócio usando a orquestração, incluindo coordenação transacional e transformação da mensagem.
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  O **mecanismo de orquestração** atua como um maestro centralizado num sistema distribuído. Em vez de cada serviço conversar diretamente com os outros, existe uma ferramenta central (hub de integração) que coordena a execução das tarefas, a transformação de dados e o fluxo das transações entre diferentes serviços e sistemas legados.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  * **Centralização da Lógica de Transação:** O mecanismo assume o controlo das transações de forma declarativa, unindo a arquitetura a bases de dados relacionais Partilhadas, em vez de adotar a prática de base de dados por serviço (*database-per-service*).
+
+
+  * **Impacto Organizacional (Lei de Conway):** Como este motor é o centro do sistema, a equipa responsável por ele acaba por se tornar um gargalo burocrático e uma força política pesada dentro da empresa.
+
+
+  * **A Armadilha Prática:** Embora pareça uma solução elegante na teoria, na prática torna-se um problema. Definir a granularidade e os limites corretos das transações distribuídas adiciona extrema complexidade e dificulta o trabalho dos desenvolvedores.
+</details>
+
+
+## Fluxo das mensagens
+- todas as requisições passam pelo mecanismo de orquestração (local dentro da arquitetura onde reside a lógica)
+
+![](./assets/livro-fundamentos-arquitetura/cap-16-fluxo-mensagens-arquitetura-orientada-servicos-2026-09-19_16-05.png)
+
+
+## Reutilização ... e acoplamento
+- objetivo maior é a reutilização no nível do serviço, ou seja, criar aos poucos e reutilizar de forma incremental
+- Tome como base o seguinte exemplo:    
+![](./assets/livro-fundamentos-arquitetura/cap-16-3-buscando-oportunidade-reutilizacao-arq-orientada-servicos-2026-09-19_16-18.png)
+
+- tem-se o entendimento que a seguradora tem uma noção de Customer.
+
+![](./assets/livro-fundamentos-arquitetura/cap-16-criando-representacao-geral-arquitetura-2026-09-19_16-22.png)
+
+- ao poucos percebe-se os trade-offs:
+  - sistema criado em torno de reutilização tem uma enorme quantidade de acoplamento
+  - outro efeito colateral poderia ser em relação a serguro de automóveis e por invalidez. A adição de informação de carteira de motorista deve ser adicionada em Customer e incluir detalhes relacionado a aseguro de automóveis, mas ao mesmo momento não tem relação com o seguro de invalidez, aumentando a complexidade.
+
+
+## Classificações das características da arquitetura
+- Arquitetura orientada a serviços e baseada em orquestração é muito particionada e levou a arquiteturas mais modernas como microsserviços.
+
+![](./assets/livro-fundamentos-arquitetura/cap-16-classificacoes-arquitetura-orientada-servicos-2026-09-19_16-40.png)
+
+
+## Resumo
+<details>
+  <summary>Gerado por IA</summary>
+  **O Conceito em Linhas Gerais**
+
+  A **Arquitetura Orientada a Serviços (SOA) baseada em orquestração** é um estilo distribuído focado na reutilização de código e serviços em nível corporativo. Em vez de recriar funcionalidades para cada projeto, a empresa constrói serviços compartilhados e utiliza um mecanismo central de orquestração (um "maestro") para conectar esses componentes e executar os fluxos de negócios.
+
+  ---
+
+  **A Visão dos Autores (Richards & Ford)**
+
+  * **Origem e Motivação:**
+  * **Necessidade de Negócio:** Empresas em crescimento e fusão nos anos 1990 precisavam integrar sistemas e escalar de forma flexível.
+  * **Estímulo Econômico:** O alto custo de licenças operacionais, bancos de dados e servidores incentivou arquiteturas distribuídas focadas em reutilizar ao máximo os recursos existentes.
+
+
+  * **Taxonomia e Tipos de Serviços:**
+  * **Serviços de Negócio:** Definidos por usuários comerciais para representar o comportamento do domínio principal (ex.: `ExecuteTrade`).
+  * **Serviços Corporativos:** Implementações menores de domínio (ex.: `CreateCustomer`). Exigem granularidade correta para evitar reescritas, mas sofrem com mudanças de mercado e tecnologia.
+  * **Serviços de Aplicativos:** Serviços de implementação única, especializados para um aplicativo específico (ex.: geolocalização).
+  * **Serviços de Infraestrutura:** Mantidos por equipes compartilhadas e DevOps para tratar questões operacionais (logs, monitoramento, autenticação).
+
+
+  * **Mecanismo de Orquestração e Fluxo de Mensagens:**
+  * **Centro do Sistema:** Todas as requisições passam pelo orquestrador central, onde reside a lógica do fluxo, transformações de dados e controle transacional.
+  * **Bancos Compartilhados:** Une a arquitetura a bancos de dados relacionais compartilhados em vez de separar um banco por serviço.
+  * **Gargalo Humano e Técnico:** A equipe responsável pelo orquestrador costuma virar um gargalo burocrático, enquanto a definição de transações distribuídas adiciona altíssima complexidade.
+
+
+  * **O Trade-off Central: Reutilização vs. Acoplamento:**
+  * **Abstrações Genéricas:** Tentar criar representações únicas (como um modelo único de `Customer` para seguros de carro e de invalidez) força a inclusão de dados irrelevantes para determinados contextos.
+  * **Alto Acoplamento:** A busca excessiva por reutilização gera dependências cruzadas em cascata e aumenta a complexidade de manutenção.
+
+
+  * **Classificação e Legado:**
+  * **Particionamento Técnico:** SOA é extremamente particionada do ponto de vista técnico.
+  * **Ponte para o Futuro:** Os problemas práticos de alto acoplamento, desempenho reduzido e gargalos no orquestrador serviram de aprendizado direto para o surgimento de estilos mais modernos, como os **microsserviços**.
+</details>
