@@ -3699,3 +3699,120 @@ Uma alternativa pe usar a orquestração para processos corporativos complexos:
 </details>
 
 
+# Capítulo 18: Escolhendo o estilo de arquitetura certo
+Depende
+
+
+## A mudança de "Moda" na arquitetura
+Fator de arquitetura preferidos que mudam com o tempo:
+- observação do passado: experiênicas passada, muitas vezes, o novos design de arquiteturas refletem deficiências específicas do estilo anterios
+- mudanças no ecossistema: na tecnologia as mudanças são constante e impossível de prever. Ex: anteriormente poucas pessoas conheciam o Kubernetes, hoje existem diversas conferências sobre o assunto e amanhã pode ser que seja susbstituída por uma nova tecnologia.
+- novas capacidades: novas capacidades na tecnologia não podem ser substituída por uma nova tecnologia. Deve mudar para um novo pardigma, assim como ocorreu com o surgimento de container como o Docker, impactando arquitetos, ferramentas, práticas de engenharia etc.
+- aceleração: não é somente as mudanças  no ecossistema, a taxa de mudança devido a novas práticas de engenharia 
+- mudanças no domínio: a própria evolução do negócio ou por fusões com outras empresas
+- mudanças na tecnologia
+- fatores externos: uma equipe pode estar feliz com uma ferramenta, mas custo de licença de outros fatores podem forçar a migração para outra opção, no caso, o gasto é um fator externo de exemplo.
+
+Independente da arquitetura da moda, um arquiteto deve entender as tendências atuais para tomar decisões inteligentes sobre seguir ou fazer exceção.
+
+
+## Critérios de decisão
+Ao escolher um estilo de arquitetura, um arquiteto planeja duas coisas:
+- qualquer domínio que foi especificado
+- todos os outros elementos estruturais requeridos para tornar o sistema um sucesso
+
+Deve estar a vontade com o seguinte:
+- Domínio
+- características da arquitetura que impactam a estrutura
+- arquitetura de dados
+- fatores otganizacionais
+- conhecimento do processo, das equipes e das preocupações operacionais
+- isomorfismo do domínio/arquitetura
+
+Levando tudo isso em conta, o arquiteto deve fazer várias determinações:
+- monolíto versus distribuído
+- onde os dados devem residir?
+- qual será o estilo de comunicação entre os serviços? Síncrono ou assíncrono?
+
+> Como a comunicação síncrona apresenta menos desafios de design, implementação e depuração, os arquitetos devem usar a síncrona por padrão quando possível e a assíncrona quando necessário. 
+
+> Use a síncrona por padrão e a assíncrona quando necessário.
+
+
+## Estudo de caso monolítico: Silicon Sandwiches
+- No kata determinou-se um único quantum
+- criou-se dois designs de componentes diferentes:
+  - particionado por domínio
+  - particionado tecnicamente
+
+### Monolítico modular
+- componente centrado no domínio com um banco de dados
+- banco de dados relacional com uma única IU Web
+
+![](./assets/livro-fundamentos-arquitetura/cap-18-1-implementacao-monolitica-modular-silicon-sandwiches-2026-09-30_21-43.png)
+
+
+### Microkernel
+![](./assets/livro-fundamentos-arquitetura/cap-18-2-implementacao-microkernel-silicon-sandwiches-2026-09-30_21-49.png)
+
+
+## Estudo de caso distribuído: Going, Going, Gone
+No kata Going, Going, Gone é um deafio de arquitetura mais interessante sendo necessário diferentes tipos de característica em componentes diferentes como leiloeiro e proponente, exemplos de características: escalabilidade e disponibilidade.
+
+![](./assets/livro-fundamentos-arquitetura/cap-18-3-implementacao-microsservicos-ggg-2026-10-01_21-20.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-18-4-limites-quanta-ggg-2026-10-01_21-31.png)
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  ### O Conceito em Linhas Gerais
+
+  O estudo de caso distribuído **"Going, Going, Gone" (GGG)** aplica conceitos avançados de arquitetura de software para projetar um sistema de leilões virtuais em tempo real. A escolha do padrão de arquitetura — neste caso, **microsserviços** — permite atender a requisitos altamente granulares, suportando características operacionais desafiadoras como alta escalabilidade, elasticidade, desempenho e isolamento de falhas.
+
+  ---
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  Mark Richards e Neal Ford demonstram como estruturar uma aplicação distribuída complexa combinando serviços especializados, comunicação assíncrona baseada em filas e o conceito de *quanta* arquiteturais:
+
+  * **Seleção do Estilo Arquitetural:**
+  * Os autores destacam que os microsserviços oferecem suporte superior a características operacionais díspares entre componentes se comparados a arquiteturas puramente baseadas em eventos.
+
+
+  * Contudo, exigem cuidado para evitar pontos fracos comuns, como **excesso de orquestração** e **separação de dados excessivamente agressiva**, que podem impactar o desempenho.
+
+
+
+
+  * **Componentes e Serviços Principais do GGG:**
+  * **AuctionSession:** Gerencia o fluxo de trabalho dos leilões individuais.
+
+
+  * **AuctioneerCapture & BidCapture:** Separam a captação de lances do leiloeiro e dos proponentes devido a características arquiteturais distintas.
+
+
+  * **BidTracker:** Unifica fluxos de informação diferentes (streams), ordenando os lances em tempo real com o auxílio de filas de mensagens como *buffers*.
+
+
+  * **BidStreamer & VideoStreamer / VideoCapture:** Fornecem fluxos (*streams*) de somente leitura e alto desempenho para os participantes e o vídeo do leilão.
+
+
+  * **Payment:** Provedor terceirizado responsável pelas informações financeiras após a conclusão do leilão.
+
+
+
+
+  * **Comunicação Síncrona vs. Assíncrona:**
+  * A adoção de filas de mensagens (comunicação assíncrona) adiciona **confiabilidade** a partes críticas do sistema. Isso protege a aplicação contra gargalos — por exemplo, quando múltiplos leilões terminam simultaneamente e o serviço de pagamento possui limites de processamento.
+
+
+
+
+  * **Limites de Quanta (Architectural Quanta):**
+  * O design final do GGG identifica **cinco quanta** principais (Payment, Auctioneer, Bidder, Bidder Streams e Bid Tracker), facilitando a definição clara dos limites de serviço, de dados e de comunicação.
+
+
+  * Conforme reforçam os autores, não existe um design "perfeito", mas sim aquele que apresenta o **conjunto menos pior de *trade-offs*** para os desafios propostos.
+</details>
+
