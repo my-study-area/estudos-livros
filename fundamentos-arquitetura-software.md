@@ -3816,3 +3816,240 @@ No kata Going, Going, Gone é um deafio de arquitetura mais interessante sendo n
   * Conforme reforçam os autores, não existe um design "perfeito", mas sim aquele que apresenta o **conjunto menos pior de *trade-offs*** para os desafios propostos.
 </details>
 
+
+# PARTE III: Técnicas de habilidades sociais
+Um arquiteto não entender a parte técnica da arquitetura, mas ter uma base com as habilidade sociais para orientar equipes de desenvolvedores e comunicar com os stackholders.
+
+
+# Capítulo 19: Decisões da arquitetura
+Arquitetos costumam tomar decisões da estrutura da aplicação ou sistema, mas também podem se envolver nas decisões de tecnologia quando podem impactar as características da arquitetura.
+
+## Antipadrões da decisão da arquitetura
+Antipadrão de acordo com o programador Aedrew Koenig é algo que parece uma boa ideia no começo, mas leva a problemas. Outra definição de antipadrão é um processo repetido que produz resultados negativos. 
+
+Os três antipadrões maiores da arquitetura que podem surgir (e geralmente surgem) ao tomar decisões da arquitetura são:
+- Cobertura dos Ativos
+- Feitiço do Tempo 
+- Arquitetura Baseada em E-mail
+
+## Antipadrão cobertura dos ativos
+- ocorre quando um arquiteto evita ou adia tomar uma decisão da arquitetura com o medo de fazer a escolha errada.
+Meios de dominar esse antipadrão:
+- esperar até o último momento responsável. Esperar até ter informação suficiente para justificar e validar a decisão
+- colaboram continuamente com as equipes de desenvolvimento e assegurar que a decisão seja implementada como esperado. Como não é viável ao arquiteto conhecer detalhadamente certa tecnologia, ao colaborar de perto com a equipe de desenvolvimento pode responder rápido a uma mudança na decisão de arquitetura se ocorrerem problemas.
+
+
+## Antipadrão Feitiço do Tempo
+Esse antipadrão ocorre quando as pessoas não sabem porque uma decisão foi tomada e continuam discutindo sem parar
+- ao dar uma justificativa nas decisões de arquitetura é importante dar uma explicação técnica e comercial.
+Como exemplos de justificativa comercial temos:
+- custos
+- colocação no mercado
+- satisfação do usuário
+- posicionamento estratégico
+- entregar uma funcionalidade mais rápido
+Contexto: uma aplicação monolítica sem divisão em Microsserviços para desacoplar as funcionalidades da aplicação que poderia ser implementada separadamente.
+
+
+## Antipadrão arquitetura baseada em e-mail
+Esse antipadrão é onde as pessoas se perdem, esquecem ou nem sabem que uma decisão foi tomada. O problema está em como comunicar uma decisão, onde o e-mail é uma ótima ferramenta, mas é um sistema ruim de repositório de documentos.
+
+Modos de aumentar a comunicação de decisão de arquitetura:
+- não incluir decisão no corpo do e-mail porque pode conter informação parcial da decisões e distribuido em diversos sistema do registro de decisão. Informação parcial no e-mail abre brecha para criar o antipadrão Feitiço do Tempo mais uma vez. Procure notificar a informação, mas fornecer o contexto completo da decisão num sistema centralizado.
+- notificar somente as pessoas que são realmente importantes
+
+
+## Significante para a arquitetura
+Muitos arquitetos acreditam que decisões de arquitetura não envolvem tecnologia, mas nem sempre é assim. Se uma tecnologia é usada porque resolve uma caracterítica da arquitetura como desempenho ou escalabilidade, então é um decisão de arquitetura.
+
+Ao falarmos sobre decisões de arquitetura de responsabilidade do arquiteto e incluindo o que é um decisão de arquitetura, [Michael Nygard](https://www.michaelnygard.com/) criou o termo "**significativo para a arquitetura**". As decisões significativas para a arquitetura são as que:
+- afetam a estrutura, 
+- as características não funcionais,
+- as dependências, 
+- as interfaces ou as técnicas de construção.
+
+### Afetam a estrututura
+decisões que implactam o padrão de arquitetura (CQRS, Saga e Circuit Breaker) ou estilo de arquitetura (Microssserviços, Monolito em camadas e Orientado a eventos) 
+
+### As características não funcionais
+são atributos (desempenho, disponibilidade, escalabilidade, testabilidade, agilidade e modularidade). Se a escolha da tecnologia gera impacto na performance da aplicação e é importante para o sistema
+
+### As dependências
+são componentes acoplados (com dependência) de outros componentes. O sistema A que depende do sistema B, mas o sistema B está indisponível e afeta diretamente o sistema A.
+
+### As interfaces ou técnicas de construção
+é a porta de entrada, o contrato de comunicação e o ponto de contato entre diferentes partes de um sistema ou entre sistemas distintos. Como exemplo temos uma API Gateway com seu contrato de API (Swagger/OPenAPI) definindo as informações necesssárias para realizar um requisição, assim como a governança com versionamento e descontinuação (depreaction).
+
+Por fim, podem ser decisões sobre plataforma, estrututuras, ferramentas e processos que embora sejam técnicos podem implactar a arquitetura.
+
+
+
+## Registro de decisão
+ADR Registros de decisão de arqutetura, foram divulgadas inicialmente por Michael Nygard em um blog e mais tarde marcados como "adotar" no periódico Technology Radar da ThoughtWorks.
+- Consiste de um arquivo de texto como asciiDoc, markdown ou uma página wiki
+- ADR-Tools é uma ferramenta para gerenciar ADRs na linha de comando
+
+
+## Estrutura básica
+Estrutura básica:
+- título
+- status
+- contexto
+- decisão
+- consequências
+
+Seções extras:
+- conformidade
+- notas
+> pode ser estendida para incluir qualquer outra seção como , por exemplo, alternativas onde poderia conter outras possíveis alternativas.
+
+![](./assets/livro-fundamentos-arquitetura/cap-19-1-estrutura-basica-adr-2026-10-04_11-07.png)
+
+### Título
+Exemplo: "42. Uso de Mensageria Assíncrona Entre os Serviços de Pedido e Pagamento".
+
+
+### Status
+Exemplos: proposto, aceito ou substituto.
+
+
+**ADRs e RFC (requisição de comentários)**    
+Existe casos que o arquiteto quer receber comentário sobre um ADR, esse documento é chamado de RFC e deve especificar um prazo para conclusão
+
+
+### Contexto
+Exemplo: “O serviço de pedido deve passar informações ao serviço de pagamento para pagar um pedido sendo feito atualmente. Isso poderia ser feito usando REST ou uma mensageria assíncrona.” Observe que essa declaração concisa não só especificou o cenário, como também as alternativas.
+
+
+### Decisão
+Por exemplo, a decisão de usar mensageria assíncrona entre os serviços mostraria “usaremos mensageria assíncrona entre os serviços”.
+- enfatizar mais por que, em vez de como. 
+
+O livro mostra um exemplo de decisão que no passado foi decidido utilizar gRPC para estabelecer a comunicação entre dois serviços e após um tempo, foi substituido por mensageria para desacoplar mais os serviços. Essa mudança causou um grande aumento na latência e como essa decisão não foi bem documentada poderia ter sido evitada.
+
+
+### Consequências
+- toda decisão tem algum impacto, bom ou ruim. O fato de documentar essa análise de trade-off traz um contexto completo e evitando a situação.
+- um exemplo é o caso de uso de mensageria assíncrona (disparar e esquecer) que reduz uma requisição de 3.100 milissegundos para 25 milissegundos numa requisição de avaliação. Outra pessoa pode questionar sobre a complexidade no tratamento de erro comum nesse cenário de mensageria assíncrona. Essa pessoa podia não ter o conhecimento, mas a decisão já havia sido tratada entre acionistas e outros arquitetos na seção de Consequências do ADR.
+
+
+### conformidade
+- não é uma informação padrão, mas é algo recomendado
+- uma conformidade poderia ser uma decisão de arquitetura onde as camadas de negócio de uma aplicação devem consumir os componentes da camada compartilhada (serviço). Exemplo:
+
+![](./assets/livro-fundamentos-arquitetura/cap-19-2-exemplo-conformidade-adr-2026-10-10_15-30.png)
+
+Para garantir a conformidade de forma automática temos o [ArchUnit](https://www.archunit.org/) no Java ou [NetArchTest](https://github.com/BenMorris/NetArchTest) em C#.
+
+```java
+@Test
+public void shared_services_should_reside_in_services_layer() {
+    classes().that().areAnnotatedWith(SharedService.class)
+        .should().resideInAPackage("..services..")
+        .because("All shared services classes used by business " +
+                 "objects in the business layer should reside in the services " +
+                 "layer to isolate and contain shared logic")
+        .check(myClasses);
+}
+```
+
+
+### Notas
+- não faz parte do ADR padrão, mas é recomendado
+Inclui vários metadados como:
+- autor original
+- data de aprovação
+- aprovado por
+- data da substituição
+- data da última modificação
+- modificado por
+- última modificação
+
+
+## Armazenando ADRs
+- Alguns arquitetos deixam os ADRs num repositório Git com o código fonte, mas não é recomendado para organizações maiores porque todos precisam ter acesso
+- a recomendação é utilizar uma página wiki ou em um diretório compartilhado em um servidor de arquivos compartilhado.
+![](./assets/livro-fundamentos-arquitetura/cap-19-3-exemplo-diretorio-adr-2026-10-10_21-23.png)
+
+- aplicacao:
+  - common: se aplica a todas as aplicações
+  - atp e pstd (exemplos de siglas de que representam um sistema): cada uma das pasta é específica para um sistema
+- integracao: ADRs que envolvem a comunicação entre aplicação, sistema e serviços
+
+
+## ADRs como documentação
+- Modelo C4 do Simon Brown ou padrão [Group ArchiMate](https://www.opengroup.org/archimate-forum/archimate-overview) são exemplos de diagrama de arquitetura, mas não existe um padrão para documentar a arquitetura
+- no ADR temos o contexto sobre uma explicação, cada alternativa para resolver o problema. A decisão explica porque uma decisão foi tomada e a seção Consequência mostra os trade-offs ao priorizar desempenho ou escalabilidade, por exemplo.
+
+<details>
+  <summary>Gerado por IA</summary>
+
+  Aqui está o resumo sobre o tema abordado:
+
+  ## O Conceito em Linhas Gerais
+
+  **ADR** (*Architecture Decision Record* ou **Registo de Decisão de Arquitetura**) é um documento curto e objetivo que regista uma escolha importante feita na arquitetura de um projeto. Funciona como um diário de bordo do sistema, explicando **o que** foi decidido, **por que** foi decidido e **quais as consequências** dessa escolha para o futuro do software.
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  Os autores destacam que documentar arquitetura de software é um desafio, pois, ao contrário da diagramação (onde existem padrões como o Modelo C4 ou ArchiMate), não existia um padrão consolidado para registar as **decisões**. Os ADRs preenchem esta lacuna como um meio eficiente de documentação.
+
+  A estrutura essencial de um ADR baseia-se em três pilares principais:
+
+  * **Contexto:** Descreve a necessidade ou o problema específico do sistema que exige uma tomada de decisão. Serve também para expor as alternativas consideradas.
+
+
+  * **Decisão:** Detalha a escolha efetuada e as razões por trás dela, sendo considerada a parte mais valiosa do documento.
+
+
+  * **Consequências:** Regista os impactos da decisão, detalhando a análise de *trade-offs* (trocas), como priorizar o desempenho em detrimento da escalabilidade.
+</details>
+
+
+## Usando ADRs para padrões
+
+
+## Exemplo
+![](./assets/livro-fundamentos-arquitetura/cap-19-4-pub-sub-entre-servicos-GGG-leilao-2026-10-11_10-56.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-19-5-mensageria-pub-sub-assincrona-ggg-2026-10-12_21-07.png)
+
+
+
+## Resumo
+<details>
+  <summary>Gerado por IA</summary>
+
+  Olá! Como seu mentor de engenharia de software e representante da obra *Fundamentos de Arquitetura de Software* (de Mark Richards e Neal Ford), vou estruturar a explicação sobre o **Capítulo 19: Decisões da Arquitetura** focando de forma clara, direta e acessível para quem está a dar os primeiros passos na área.
+
+  ---
+
+  ## O Conceito em Linhas Gerais
+
+  Na engenharia de software, tomar decisões vai muito para além de escrever código funcional. Um arquiteto decide a estrutura da aplicação e as tecnologias envolvidas, sempre medindo o impacto nas chamadas **características da arquitetura** (como desempenho, escalabilidade e segurança). No entanto, o processo de decisão pode falhar se cairmos em **antipadrões** (armadilhas comuns que parecem boas no início mas trazem prejuízos) ou se não documentarmos o **porquê** das escolhas. É aqui que entram ferramentas fundamentais como os **ADRs** (*Architecture Decision Records* ou Registos de Decisão de Arquitetura).
+
+  ---
+
+  ## A Visão dos Autores (Richards & Ford)
+
+  Mark Richards e Neal Ford dividem este capítulo em pilares cruciais para que possamos tomar e documentar decisões de forma madura e sustentável:
+
+  * **O que é um "Significante para a Arquitetura"?**
+  Muitos pensam que decisões de arquitetura não envolvem tecnologia, mas envolvem sempre que a escolha tecnológica resolve ou afeta uma característica arquitetural. Michael Nygard cunhou o termo *significante para a arquitetura* para abranger decisões que afetam a estrutura, as características não funcionais, as dependências, as interfaces (contratos de API) ou as técnicas de construção.
+  * **Os Três Grandes Antipadrões da Decisão:**
+  1. **Cobertura dos Ativos:** Ocorre quando o arquiteto adia a decisão com medo de errar. A solução é esperar até ao "último momento responsável" (quando há informação suficiente) e colaborar de perto com as equipas de desenvolvimento.
+  2. **Feitiço do Tempo:** Acontece quando ninguém se lembra do motivo de uma decisão e as discussões estagnam. Para evitar isto, as decisões devem ser justificadas não só com aspetos técnicos, mas com **justificativas comerciais** (custos, satisfação do utilizador, time-to-market).
+  3. **Arquitetura Baseada em E-mail:** Ocorre quando as decisões são espalhadas por e-mails perdidos. O e-mail serve para *notificar*, mas nunca para servir de repositório central de documentação.
+
+
+  * **O Poder dos ADRs (Registos de Decisão de Arquitetura):**
+  Como a arquitetura carecia de um padrão de documentação comparável aos diagramas (como o Modelo C4), os ADRs surgiram para registar o histórico de escolhas. Uma estrutura básica de um ADR contém:
+  * **Título:** Nome claro e objetivo da decisão.
+  * **Estado:** Proposto, aceito ou substituído.
+  * **Contexto:** O problema a ser resolvido e as alternativas avaliadas.
+  * **Decisão:** O que foi escolhido (focando mais no **porquê** do que no *como*).
+  * **Consequências:** A análise honesta de *trade-offs* (impactos positivos e negativos).
+  * *Secções extras recomendadas:* **Conformidade** (regras que podem ser validadas automaticamente por ferramentas como *ArchUnit*) e **Notas** (metadados como autor e datas).
+</details>
