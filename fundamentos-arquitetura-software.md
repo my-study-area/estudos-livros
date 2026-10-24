@@ -4053,3 +4053,183 @@ Inclui vários metadados como:
   * **Consequências:** A análise honesta de *trade-offs* (impactos positivos e negativos).
   * *Secções extras recomendadas:* **Conformidade** (regras que podem ser validadas automaticamente por ferramentas como *ArchUnit*) e **Notas** (metadados como autor e datas).
 </details>
+
+
+
+# Capítulo 20: Analisando o risco da arquitetura
+Aqui no capítulo será abordado sobre as técnicas para qualificar os riscos, avaliar e identificar como uma atividade **risk storming**
+
+## Matriz de risco
+A matriz de risco utiliza duas dimensões para classificar o risco:
+- impacto real
+- probabilidade de ele ocorrer
+
+Cada dimensão tem uma classificação:
+- baixa (1)
+- média (2)
+- alta (3)
+
+![](./assets/livro-fundamentos-arquitetura/cap-20-matriz-determincar-risco-arquitetura-2026-10-18_16-14.png)
+
+> Ao utilizar a matriz de risco para qualificar o risco, considere primeiro a dimensão do impacto, depois a dimensão da probabilidade.
+
+
+
+## Avaliação do risco
+A matriz de risco pode ser utilizada na avaliação de risco. É um relatório resumido do risco geral de uma arquitetura em relação a algum critério de avaliação contextual e significativo.
+
+![](./assets/livro-fundamentos-arquitetura/cap-20-2-exemplo-avalicao-risco-2026-10-18_16-26.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-20-3-filtrando-avaliacao-risco-apenas-alto-risco-2026-10-18_16-36.png)
+
+Agora um exemplo com uma visão demonstrando que os critérios avaliados estão melhorando ou piorando com o tempo:
+![](./assets/livro-fundamentos-arquitetura/cap-20-4-mostrando-direcao-risco-com-sinal-mais-ou-menos-2026-10-18_16-41.png)
+
+Outra forma de representar é utilizando setas em conjunto com números para expressar que algo está melhorando com uma seta para cima em conjunto com um número ou piorando, utilizando uma seta para baixo seguida de um número:
+![](./assets/livro-fundamentos-arquitetura/cap-20-5-direcao-risco-setas-numeros-2026-10-18_16-43.png)
+
+
+## Risk storming
+O Risk storming pode ajudar um arquiteto quando ele não vê ou ignora uma área de risco ou não tenha domíno total de conhecimento de cada parte do sistema.
+
+Exemplo de arquitetura que usaremos para mostrar o processo de risk storming:
+
+![](./assets/livro-fundamentos-arquitetura/diagrama-arquitetura-exemplo-risk-storming-2026-10-22_21-19.png)
+
+
+O risk storming e dividido em três atividades básicas:
+- identificação
+- consenso
+- mitigação
+
+A identificação é uma atividade individual e sem colaboração, já o consenso e mitigação é realizada em colaboração com todos participantes.
+
+
+## Identificação
+Cada participante deve identificar as áreas de risco individualmente.
+
+
+## Consenso
+É altamente colaborativa, usando o desenho de arquitetura, os participantes colocam adesivos indicando as áreas de risco identificadas na atividade de identificação.
+
+![](./assets/livro-fundamentos-arquitetura/cap-20-7-identificacao-inicial-areas-risco-2026-10-22_21-39.png)
+
+Os itens que os risco que são identificados por mais de uma pessoa concordam não precisam de um debate, já os que divergem ou uma pessoa avalia um risco alto são discutidos com a pessoa que avaliou para tomar uma decisão. Outra ação comum é avaliar um risco como alto quando não tem conhecimento sobre uma tecnologia do desenho de arquitetura. 
+
+> Para as tecnologias não comprovadas ou desconhecidas, sempre atribua uma classificação de risco mais alto (9), uma vez que a matriz de risco não pode ser usada para essa dimensão.
+
+![](./assets/livro-fundamentos-arquitetura/cap-20-8-consenso-area-risco-2026-10-22_21-49.png)
+
+
+## Mitigação
+A mitigação costuma envolver mudanças ou melhorias em certas áreas dela que poderiam ser consideradas perfeitas como estavam.
+
+É uma atividade de colaboração
+
+Pode ocorrer uma refatoração simples ou refatoração total do desenho de arquitetura. Esses tipos de mudanças geram custos e são discutidas entre os acionistas.
+
+
+
+## Análise de risco da história com a metodologia ágil
+Também pode ser utilizado fora da arquitetura, no risco da conclusão da história numa interação Ágil.
+
+
+## Exemplos de risk storming
+![](./assets/livro-fundamentos-arquitetura/cap-20-9-arquitetura-alto-nivel-sistema-diagnostico-2026-10-24_14-23.png)
+
+
+## Disponibilidade
+![](./assets/livro-fundamentos-arquitetura/cap-20-10-areas-risco-disponibilidade-2026-10-24_14-29.png)
+
+Mudança de arquitetura para lidar com alta disponibilidade no banco de dados:    
+![](./assets/livro-fundamentos-arquitetura/cap-20-11-modificacoes-arquitetura-lidar-risco-disponibilidade-2026-10-24_14-33.png)
+
+
+## Elasticidade
+![](./assets/livro-fundamentos-arquitetura/cap-20-12-modificacoes-arquitetura-lidar-risco-elasticidade-2026-10-24_14-45.png)
+
+
+## Segurança
+![](./assets/livro-fundamentos-arquitetura/cap-20-13-modificacoes-finais-arquitetura-lidar-risco-segurancao-2026-10-24_14-50.png)
+
+## Resumo
+<details>
+  <summary>Gerado por IA</summary>
+  ## 1. Matriz de Risco
+
+  ### O Conceito em Linhas Gerais
+
+  A **Matriz de Risco** é uma ferramenta simples para mensurar e quantificar a probabilidade de uma falha ocorrer em um sistema combinada ao estrago (impacto) que essa falha pode causar.
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  * **Duas Dimensões Principais:**
+  * **Impacto Real:** Avaliado de Baixo (1) a Alto (3).
+  * **Probabilidade de Ocorrência:** Avaliada de Baixa (1) a Alta (3).
+
+
+  * **Multiplicação dos Fatores:** O valor final do risco é obtido multiplicando o impacto pela probabilidade, gerando pontuações que variam de **1 (menor risco)** a **9 (maior risco)**.
+  * **A Regra de Ouro:** Ao qualificar qualquer ponto do sistema, avalie **primeiro o impacto** para entender o peso real do problema e **depois a probabilidade**.
+
+  ---
+
+  ## 2. Avaliação de Risco
+
+  ### O Conceito em Linhas Gerais
+
+  A **Avaliação de Risco** organiza os riscos identificados em um relatório contextual e dinâmico, mostrando onde a arquitetura está vulnerável e se os riscos estão aumentando ou diminuindo com o tempo.
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  * **Relatório Tabular de Critérios:** Cruzam-se as características de arquitetura (como Desempenho, Escalabilidade, Segurança e Integridade) com partes do sistema ou cenários de negócio.
+  * **Filtragem de Foco:** Permite filtrar o relatório para exibir apenas áreas classificadas com risco alto (ex.: pontuações 6 ou 9), evitando sobrecarregar o time com detalhes menores.
+  * **Acompanhamento de Tendência (Direção do Risco):**
+  * **Sinais de `+` e `-`:** Indicam se o risco está melhorando (diminuindo) ou piorando (aumentando).
+  * **Setas e Números:** Indicam visualmente a direção (seta para cima/baixo) e a pontuação anterior para mostrar a evolução histórica exata da arquitetura.
+
+
+
+  ---
+
+  ## 3. Risk Storming
+
+  ### O Conceito em Linhas Gerais
+
+  O **Risk Storming** é uma dinâmica colaborativa criada para revelar riscos "escondidos" no desenho da arquitetura, especialmente quando o arquiteto não tem domínio total de todas as partes do sistema.
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  * **O Processo em Três Etapas:**
+  1. **Identificação (Individual):** Cada participante analisa o diagrama de arquitetura sozinho e sem interferência externa, anotando os riscos em adesivos.
+  2. **Consenso (Colaborativo):** Todos colocam seus adesivos no diagrama visual. Riscos identificados por várias pessoas são aceitos imediatamente. Divergências ou notas altas isoladas são debatidas até que o grupo chegue a um valor final.
+  3. **Mitigação (Colaborativo):** O grupo define se o risco exige pequenas alterações (refatoração simples) ou reestruturação profunda da arquitetura (refatoração total), considerando o impacto financeiro com os stakeholders.
+
+
+  * **Regra para Tecnologias Desconhecidas:** Quando uma tecnologia não é comprovada ou é desconhecida pela equipe, atribui-se **automaticamente o risco máximo (9)**, pois a incerteza impede o uso da matriz padrão.
+  * **Aplicação em Processos Ágeis:** A técnica de *Risk Storming* também pode ser adaptada para avaliar riscos na entrega de histórias de usuário em iterações/sprints.
+
+  ---
+
+  ## 4. Exemplos Práticos de Mitigação de Risco
+
+  ### O Conceito em Linhas Gerais
+
+  Após identificar as vulnerabilidades no *Risk Storming*, são aplicadas modificações pontuais no desenho da arquitetura para mitigar cada tipo específico de risco.
+
+  ### A Visão dos Autores (Richards & Ford)
+
+  * **Disponibilidade:**
+  * *Problema:* Um banco de dados centralizado representa um ponto único de falha (Single Point of Failure).
+  * *Mitigação:* Separação dos bancos de dados por domínio/serviço e criação de clusters para garantir alta disponibilidade.
+
+
+  * **Elasticidade:**
+  * *Problema:* Gargalos de processamento ao lidar com picos súbitos de acessos ou requisições assíncronas.
+  * *Mitigação:* Introdução de filas de mensagens (mensageria) e mecanismos de *cache* para desacoplar a carga e processar picos com eficiência.
+
+
+  * **Segurança:**
+  * *Problema:* Exposição direta dos serviços centrais sem validação adequada de acesso.
+  * *Mitigação:* Centralização dos acessos através de *API Gateways* dedicados e integração com um Sistema de Autenticação corporativo.
+</details>
+
