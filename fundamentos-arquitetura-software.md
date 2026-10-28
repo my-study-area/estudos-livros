@@ -4233,3 +4233,60 @@ Mudança de arquitetura para lidar com alta disponibilidade no banco de dados:
   * *Mitigação:* Centralização dos acessos através de *API Gateways* dedicados e integração com um Sistema de Autenticação corporativo.
 </details>
 
+
+# Capítulo 21: Diagramando e apresentando a arquitetura
+- Diagramar e apresentar arquiteturas são duas habilidades dos arquitetos
+- **Consistência da apresentação** é a prática de sempre mostrar a relação entre as partes de uma arquitetura em diagramas ou apresentações antes de mudar a exibição.    
+![](./assets/livro-fundamentos-arquitetura/cap-21-1-usando-consistencia-representacao-inidicar-contexto-diagrama-maior-2026-10-25_10-36.png)
+
+## Diagramando
+- os arquitetos devem aprimorar suas habilidades de diagramação para uma precisão extrema.
+
+## Feramentas
+- ferramenta utilizada no livro: [omnigraffle](https://www.omnigroup.com/omnigraffle)
+
+### Camadas
+As camadas servem para mostrar ou ocultar camadas individuais.
+
+### Moldes/templates
+Permite criar diagramas com rapidez
+
+### Imãs
+As ferramentas nos permitem criar linhas entre os componentes e os imãs são os locais onde essas linhas podem se conectar nos componentes facilitando no alinhamento automático.
+
+## Padrões da diagramação: UML, C4 e Archimate
+- UML: UNified MOdeling Language. Ex: diagrama de sequências
+- C4: desenvolvido por Simon Brown utilizando 4 Cs. Adequada para sistemas monolíticos e menos adequado para arquiteturas distribuídas como os microsserviços.
+- ArchiMate: uma combinação de arquitetura + animação. De código aberto
+
+## Diretrizes do diagrama
+Algumas diretrizes gerais para criar diagramas técnicos:
+- Títulos
+- Linhas: devem ser grossas. LInhas solidas indicam uma comunicação síncrona e as linhas pontilhadas indicam assíncrona.
+- Formas 
+- Rotulos
+- Cores:    
+![](./assets/livro-fundamentos-arquitetura/cap-21-2-comunicacao-microservicos-mostando-servicos-diferentes-cores-2026-10-26_21-25.png)
+- Legendas
+
+
+## Apresentação
+- PowerPoint e Keynote
+
+## Manipulando o tempo
+
+## Construções incrementais
+![](./assets/livro-fundamentos-arquitetura/cap-21-3-versao-ruim-slide-mostrando-antipadrao-negativo-2026-10-27_21-02.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-21-4-versao-incremento-melhor-mantem-suspense-2026-10-27_21-07.png)
+
+
+## Infodecks versus apresentações
+Infodecks são slides que não devem ser projetados, mas resumem as informações em gráficos, basicamente usando uma ferramenta de apresentação como um pacote de editoração eletrônica.
+
+
+## Os slides são metade da história
+
+## Invisibilidade
+Invisibilidade é um padrão simples em que o apresentador insere um slide preto vazio na apresentação para focar de novo a atenção apenas no
+
