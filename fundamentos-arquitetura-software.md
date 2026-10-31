@@ -4290,3 +4290,102 @@ Infodecks são slides que não devem ser projetados, mas resumem as informaçõe
 ## Invisibilidade
 Invisibilidade é um padrão simples em que o apresentador insere um slide preto vazio na apresentação para focar de novo a atenção apenas no
 
+
+# Capítulo 22: Tornando as equipes eficientes
+Neste capítulo, apresentamos algumas técnicas básicas que um arquiteto pode utilizar para tornar eficientes as equipes de desenvolvimento.
+
+
+## Limtes da equipe
+![](./assets/livro-fundamentos-arquitetura/cap-22-1-tipos-limites-criados-arquiteto-2026-10-28_21-07.png)
+
+
+## Personalidades do arquiteto
+Os três tipos básicos de personalidade do arquiteto:
+- arquiteto controlador
+- arquiteto folgado
+- arquiteto eficiente
+
+### Controlador
+- impede que desenvolvedores utilizem código aberto e insisti em escrever tudo do zero
+- definem convenções nas nomenclaturas, design de classe e tamanho de métodos
+
+
+### Arquiteto folgado
+![](./assets/livro-fundamentos-arquitetura/cap-22-4-arquitetura-trading-arquiteto-folgado-2026-10-28_21-19.png)
+
+- Não entender totalmente o domínio corporativo, problema corporativo ou a tecnologia usada
+- Não ter experiência prática suficiente no desenvolvimento de software
+- Não considerar as implicações associadas à implementação da solução da arquitetura
+
+### Arquiteto eficiente
+- produz os limites e restrições certos
+- requer trabalhar de perto e colaborar com a equipe, ganhando o respeito
+
+
+## Quanto controle?
+Saber controlar o quanto um arquiteto deve ser controlador ou folgado envolve 5 fatores:
+- familiaridade na equipe
+- tamanho da equipe
+- experiência geral
+- complexidade do projeto
+- duração do projeto
+
+![](./assets/livro-fundamentos-arquitetura/cap-22-6-escala-quantidade-controle-2026-10-28_22-27.png)
+
+Tabela 22-1. Cenário 1, exemplo da quantidade de controle    
+![](./assets/livro-fundamentos-arquitetura/cap-22-tabela-22-1-quantidade-controle-2026-10-28_22-29.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-22-7-quantidade-controle-cenario-1-2026-10-28_22-30.png)
+
+Tabela 22-1. Cenário 1, exemplo da quantidade de controle:    
+![](./assets/livro-fundamentos-arquitetura/cap-22-1-cenario-exemplo-quantidade-controle-2026-10-29_21-03.png)
+
+
+![](./assets/livro-fundamentos-arquitetura/tab-22-2-cenario-2-exemplo-quantidade-controle-2026-10-29_21-06.png)
+
+![](./assets/livro-fundamentos-arquitetura/cap-22-8-quantidade-controle-cenario-2-2026-10-29_21-07.png)
+
+
+## Sinais de aviso de equipe
+![](./assets/livro-fundamentos-arquitetura/cap-22-9-tamanho-equipe-impacta-produtividade-2026-10-29_21-13.png)
+
+
+- Ignorância plural
+- difusão da responsabilidade
+
+
+## Utilizando checklists
+Checklist **ruim** para criar uma tabela no banco de dados:
+![](./assets/livro-fundamentos-arquitetura/cap-22-11-exemplo-checklist-ruim-2026-10-29_21-26.png)
+
+> Não se preocupe em declarar o óbvio em uma checklist. É o óbvio que normalmente é ignorado ou esquecido.
+
+Três checklists importantes que achamos mais eficientes são completude de código do desenvolvedor, testes unitários e funcionais e entregas do software.
+
+Efeito Hawthorne: esse efeito significa basicamente que se as pessoas sabem que estão sendo observadas ou monitoradas, o comportamento delas muda e normalmente farão a coisa certa. Exemplos incluem câmeras bem visíveis nos prédios que realmente não funcionam nem estão de fato gravando nada.
+
+
+## Checklist da completude de código do desenvolvedor
+![](./assets/livro-fundamentos-arquitetura/cap-22-12-exmplo-checklist-completude-codigo-desenvolvedor-2026-10-29_21-42.png)
+
+
+## Checklist dos testes unitários e funcionais
+Alguns itens encontrados em uma checklist de testes unitários e funcionais: 
+- Caracteres especiais no texto e nos campos numéricos
+- Intervalos mínimo e máximo de valores 
+- Casos de teste incomuns e extremos 
+- Campos que faltam
+
+## Checklist de Release do Software
+Alguns itens normalmente incluídos na checklist de release do software: 
+- Mudanças de configuração nos servidores ou nos servidores de configuração externos
+- Bibliotecas de terceiros adicionadas ao projeto (JAR, DLL etc.) 
+- Atualizações do banco de dados e scripts de migração do banco de dados correspondentes
+
+
+## Dando orientação
+![](./assets/livro-fundamentos-arquitetura/cap-22-13-dando-orientacao-pilha-camadas-2026-10-30_21-13.png)
+
+
+## Resumo
+
